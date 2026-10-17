@@ -1,0 +1,636 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop Management - Sales Return</title>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f1f5f9;color:#1e293b;font-family:Arial,sans-serif}
+header{background:linear-gradient(135deg,#0f172a,#1e3a8a);color:white;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{font-size:22px;margin:0}
+.header-actions{display:flex;gap:8px;flex-wrap:wrap}
+header a,header .dashboard-button{background:#2563eb;color:white;padding:10px 14px;border:0;border-radius:6px;font-weight:bold;font-size:14px;text-decoration:none;cursor:pointer;display:inline-block}
+header a:hover,header .dashboard-button:hover{background:#1d4ed8}
+.container{max-width:1250px;margin:22px auto;padding:0 15px}
+.card{background:white;padding:18px;border-radius:10px;margin-bottom:18px;box-shadow:0 2px 8px #0000000c}
+h2{font-size:19px;margin:0 0 15px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.field{flex:1;min-width:180px;margin-bottom:12px}
+label{display:block;font-weight:bold;font-size:13px;margin-bottom:6px}
+input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;background:white;color:#1e293b}
+input:focus,select:focus,textarea:focus{outline:2px solid #bfdbfe;border-color:#2563eb}
+button{padding:10px 14px;border:0;border-radius:6px;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}
+.primary{background:#2563eb;color:white}
+.primary:hover{background:#1d4ed8}
+.success{background:#15803d;color:white}
+.success:hover{background:#166534}
+.secondary{background:#475569;color:white}
+.light{background:#e2e8f0;color:#0f172a}
+.notice{display:none;padding:12px;border-radius:6px;margin-bottom:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.notice.ok{display:block;background:#dcfce7;color:#166534}
+.notice.error{display:block;background:#fee2e2;color:#991b1b}
+.notice.info{display:block;background:#dbeafe;color:#1e40af}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:700px}
+th,td{padding:10px;border-bottom:1px solid #e2e8f0;text-align:left;font-size:13px}
+th{background:#f8fafc}
+.muted{color:#64748b;font-size:12px;line-height:1.6}
+.totals{max-width:350px;margin:16px 0 16px auto}
+.total-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #e2e8f0}
+.grand{font-size:20px;font-weight:bold;color:#166534}
+.badge{display:inline-block;background:#e0f2fe;color:#075985;padding:4px 8px;border-radius:15px}
+.empty{text-align:center;color:#64748b;padding:22px}
+.sale-info{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px 18px;margin-bottom:16px}
+.sale-info p{margin:5px 0;font-size:14px;overflow-wrap:anywhere}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.return-qty{max-width:110px}
+@media(max-width:650px){header{padding:15px}header h1{font-size:18px}.container{margin:12px auto}.card{padding:12px}.field{min-width:100%}.row>button{max-width:100%}}
+@media print{
+ .no-print,header a,header .dashboard-button{display:none!important}
+ body{background:white}
+ .container{margin:0;max-width:none;padding:0}
+ .card{box-shadow:none;border:1px solid #ddd;break-inside:avoid}
+}
+</style>
+</head>
+
+<body>
+<header>
+  <h1>Shop Management — Sales Return</h1>
+  <div class="header-actions">
+    <!-- Dashboard link does not depend on JavaScript -->
+    <a class="dashboard-button" href="/frontend/dashboard.html">&#8592; Dashboard</a>
+    <a href="/docs" target="_blank" rel="noopener">API Docs</a>
+  </div>
+</header>
+
+<div class="container">
+  <div id="message" class="notice" role="status" aria-live="polite"></div>
+
+  <section class="card no-print">
+    <h2>Find Original Sale</h2>
+    <div class="row">
+      <div class="field">
+        <label for="saleSearch">Invoice Number or Sale ID</label>
+        <input id="saleSearch" placeholder="Example: invoice number or 1">
+      </div>
+      <button class="primary" id="searchBtn" type="button" onclick="findSale()">Search Bill</button>
+    </div>
+    <p class="muted">Original sales receipt ka invoice number ya numeric Sale ID enter karein.</p>
+  </section>
+
+  <section id="saleCard" class="card" hidden>
+    <h2>Original Sale Details</h2>
+    <div id="saleInfo" class="sale-info"></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Product</th><th>Sold Qty</th><th>Already Returned</th>
+            <th>Available to Return</th><th>Unit Price</th>
+            <th>Return Qty</th><th>Return Amount</th>
+          </tr>
+        </thead>
+        <tbody id="itemsBody"></tbody>
+      </table>
+    </div>
+
+    <div class="row no-print" style="margin-top:18px">
+      <div class="field">
+        <label for="refundMethod">Refund Method</label>
+        <select id="refundMethod">
+          <option value="Cash">Cash Refund</option>
+          <option value="Customer Credit">Customer Credit</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="notes">Return Notes (Optional)</label>
+        <input id="notes" maxlength="500" placeholder="Reason for return">
+      </div>
+    </div>
+
+    <div class="totals">
+      <div class="total-row grand">
+        <span>Return Total</span><span id="returnTotal">Rs. 0.00</span>
+      </div>
+    </div>
+
+    <p class="muted no-print">Customer Credit sirf registered customer se linked sale ke liye available hai.</p>
+
+    <div class="actions no-print">
+      <button class="success" id="saveBtn" type="button" onclick="submitReturn()">Save Sales Return</button>
+      <button class="light" type="button" onclick="window.print()">Print This Page</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="row" style="justify-content:space-between">
+      <h2>Sales Return History</h2>
+      <button class="primary no-print" type="button" onclick="loadHistory()">Refresh History</button>
+    </div>
+
+    <div class="row no-print">
+      <div class="field">
+        <label for="historySearch">Search Return</label>
+        <input id="historySearch" placeholder="Search return number or invoice">
+      </div>
+      <button class="secondary" type="button" onclick="loadHistory()">Search</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Return No.</th><th>Original Invoice</th><th>Date</th>
+            <th>Customer</th><th>Refund Method</th><th>Amount</th>
+            <th class="no-print">Receipt</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody">
+          <tr><td colspan="7" class="empty">Loading history...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+let currentSale = null;
+let returnBusy = false;
+let historyBusy = false;
+
+const money = value => "Rs. " + Number(value || 0).toLocaleString("en-PK", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2
+});
+
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  })[c]);
+}
+
+function message(text, type="ok") {
+  $("message").className = "notice " + type;
+  $("message").textContent = text;
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function unwrapObject(data, key) {
+  if (data && data[key] && typeof data[key] === "object") return data[key];
+  if (data && data.data && typeof data.data === "object") {
+    if (data.data[key] && typeof data.data[key] === "object") return data.data[key];
+    return data.data;
+  }
+  return data || {};
+}
+
+function unwrapList(data, keys) {
+  if (Array.isArray(data)) return data;
+  for (const key of keys) {
+    if (Array.isArray(data?.[key])) return data[key];
+  }
+  if (Array.isArray(data?.data)) return data.data;
+  return [];
+}
+
+async function api(url, options={}) {
+  const headers = {...(options.headers || {})};
+  if (options.body !== undefined) headers["Content-Type"] = "application/json";
+
+  const response = await fetch(url, {
+    ...options,
+    credentials:"same-origin",
+    headers
+  });
+
+  const responseText = await response.text();
+  let data = {};
+  try {
+    data = responseText ? JSON.parse(responseText) : {};
+  } catch {
+    data = {detail:responseText};
+  }
+
+  if (!response.ok) {
+    const detail = data.detail || data.message || data.error;
+    const errorText = typeof detail === "string"
+      ? detail
+      : JSON.stringify(detail || ("HTTP " + response.status));
+    throw new Error(errorText || ("HTTP " + response.status));
+  }
+  return data;
+}
+
+function getSaleId(sale) {
+  return sale?.id ?? sale?.sale_id ?? sale?.saleId ?? sale?.id_sale ?? null;
+}
+
+function getInvoice(sale) {
+  return sale?.invoice_number ?? sale?.invoice_no ?? sale?.invoiceNumber ??
+         sale?.sale_number ?? sale?.bill_number ?? sale?.id ?? "—";
+}
+
+function getSaleItems(sale) {
+  return sale?.items ?? sale?.sale_items ?? sale?.details ?? sale?.products ?? [];
+}
+
+function getProductName(item) {
+  return item?.product_name ?? item?.name ?? item?.product?.name ??
+         item?.title ?? ("Product " + (item?.product_id ?? ""));
+}
+
+function getSoldQty(item) {
+  return Number(item?.quantity ?? item?.qty ?? item?.sold_quantity ?? item?.sale_quantity ?? 0);
+}
+
+function getUnitPrice(item) {
+  return Number(item?.unit_price ?? item?.selling_price ?? item?.price ??
+                item?.final_price ?? item?.sale_price ?? 0);
+}
+
+function getSaleItemId(item) {
+  return item?.id ?? item?.sale_item_id ?? item?.item_id ?? null;
+}
+
+function getProductId(item) {
+  return item?.product_id ?? item?.product?.id ?? null;
+}
+
+function getReturnQty(item) {
+  return Number(item?.returned_quantity ?? item?.already_returned_quantity ??
+                 item?.total_returned_quantity ?? item?.returned_qty ?? 0);
+}
+
+function getCustomerName(sale) {
+  return sale?.customer_name ?? sale?.customer?.customer_name ??
+         sale?.customer?.name ?? sale?.customer_name_snapshot ?? "Walk-in Customer";
+}
+
+function getSaleDate(sale) {
+  return sale?.created_at ?? sale?.sale_date ?? sale?.date ?? sale?.created_on ?? "—";
+}
+
+function showSale(sale) {
+  const items = getSaleItems(sale);
+  if (!items.length) {
+    throw new Error("Is sale ke response mein items nahi mile. /docs mein sale details endpoint check karein.");
+  }
+
+  currentSale = sale;
+  $("saleCard").hidden = false;
+
+  $("saleInfo").innerHTML = `
+    <p><strong>Sale ID:</strong> ${esc(getSaleId(sale) ?? "—")}</p>
+    <p><strong>Invoice:</strong> ${esc(getInvoice(sale))}</p>
+    <p><strong>Date:</strong> ${esc(getSaleDate(sale))}</p>
+    <p><strong>Customer:</strong> ${esc(getCustomerName(sale))}</p>
+    <p><strong>Total:</strong> ${money(sale.total_amount ?? sale.total ?? sale.grand_total ?? 0)}</p>
+    <p><strong>Status:</strong> ${esc(sale.status ?? "—")}</p>
+  `;
+
+  $("itemsBody").innerHTML = items.map((item,index) => {
+    const sold = getSoldQty(item);
+    const returned = getReturnQty(item);
+    const available = Math.max(0, sold - returned);
+    const price = getUnitPrice(item);
+    const rowKey = getSaleItemId(item) ?? index;
+
+    return `<tr
+      data-index="${index}"
+      data-sale-item-id="${esc(getSaleItemId(item) ?? "")}"
+      data-product-id="${esc(getProductId(item) ?? "")}"
+      data-price="${price}"
+      data-sold="${sold}"
+      data-returned="${returned}"
+      data-available="${available}">
+      <td>${esc(getProductName(item))}</td>
+      <td>${sold}</td>
+      <td>${returned}</td>
+      <td>${available}</td>
+      <td>${money(price)}</td>
+      <td><input class="return-qty" type="number" min="0" max="${available}" step="any" value="0" aria-label="Return quantity for ${esc(getProductName(item))}" data-row-key="${esc(rowKey)}" ${available <= 0 ? "disabled" : ""} oninput="updateTotal()"></td>
+      <td class="line-total">${money(0)}</td>
+    </tr>`;
+  }).join("");
+
+  $("refundMethod").value = "Cash";
+  $("notes").value = "";
+  updateTotal();
+  $("saleCard").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function updateTotal() {
+  let total = 0;
+  document.querySelectorAll("#itemsBody tr").forEach(row => {
+    const input = row.querySelector(".return-qty");
+    if (!input) return;
+
+    const available = Number(row.dataset.available || 0);
+    const price = Number(row.dataset.price || 0);
+    let qty = Number(input.value || 0);
+
+    if (!Number.isFinite(qty) || qty < 0) qty = 0;
+    if (qty > available) {
+      qty = available;
+      input.value = String(available);
+    }
+
+    const amount = qty * price;
+    total += amount;
+    row.querySelector(".line-total").textContent = money(amount);
+  });
+  $("returnTotal").textContent = money(total);
+  return total;
+}
+
+async function findSale() {
+  const query = $("saleSearch").value.trim();
+  if (!query) {
+    message("Invoice number ya Sale ID enter karein.", "error");
+    return;
+  }
+
+  $("searchBtn").disabled = true;
+  $("searchBtn").textContent = "Searching...";
+
+  try {
+    let sale = null;
+
+    // Numeric input: first try the sale detail endpoint.
+    if (/^\d+$/.test(query)) {
+      try {
+        const result = await api("/sales/" + encodeURIComponent(query));
+        sale = unwrapObject(result, "sale");
+      } catch (_) {
+        // Try list search below if this endpoint or ID is unavailable.
+      }
+    }
+
+    // Invoice search or fallback.
+    if (!sale || !getSaleItems(sale).length) {
+      const result = await api("/sales/?search=" + encodeURIComponent(query) + "&page=1&limit=50");
+      const sales = unwrapList(result, ["sales","items","results"]);
+      sale = sales.find(s => String(getInvoice(s)).toLowerCase() === query.toLowerCase())
+          || sales.find(s => String(getSaleId(s)) === query)
+          || (sales.length === 1 ? sales[0] : null);
+    }
+
+    if (!sale) {
+      throw new Error("Sale nahi mili. Invoice number check karein.");
+    }
+
+    const id = getSaleId(sale);
+    if (id !== null && !getSaleItems(sale).length) {
+      try {
+        const result = await api("/sales/" + encodeURIComponent(id));
+        sale = unwrapObject(result, "sale");
+      } catch (_) {}
+    }
+
+    if (!getSaleItems(sale).length) {
+      throw new Error("Sale mil gayi lekin uske items nahi mile. /docs mein GET /sales/{id} check karein.");
+    }
+
+    showSale(sale);
+    message("Original sale load ho gayi. Return quantity enter karein.", "ok");
+  } catch (error) {
+    currentSale = null;
+    $("saleCard").hidden = true;
+    message("Sale load nahi hui: " + error.message, "error");
+  } finally {
+    $("searchBtn").disabled = false;
+    $("searchBtn").textContent = "Search Bill";
+  }
+}
+
+async function submitReturn() {
+  if (returnBusy) return;
+  if (!currentSale) {
+    message("Pehle original sale search karein.", "error");
+    return;
+  }
+
+  const saleId = getSaleId(currentSale);
+  if (saleId === null) {
+    message("Sale ID response mein nahi mili.", "error");
+    return;
+  }
+
+  const items = [];
+  document.querySelectorAll("#itemsBody tr").forEach(row => {
+    const input = row.querySelector(".return-qty");
+    if (!input) return;
+
+    const quantity = Number(input.value || 0);
+    if (quantity <= 0) return;
+
+    items.push({
+      sale_item_id: row.dataset.saleItemId ? Number(row.dataset.saleItemId) : null,
+      product_id: row.dataset.productId ? Number(row.dataset.productId) : null,
+      quantity: quantity,
+      return_quantity: quantity,
+      unit_price: Number(row.dataset.price || 0)
+    });
+  });
+
+  if (!items.length) {
+    message("Kam az kam ek product ki Return Qty zero se zyada enter karein.", "error");
+    return;
+  }
+
+  for (const item of items) {
+    if (item.quantity <= 0) {
+      message("Return quantity valid honi chahiye.", "error");
+      return;
+    }
+  }
+
+  const total = updateTotal();
+  const payload = {
+    sale_id: Number(saleId),
+    refund_method: $("refundMethod").value,
+    notes: $("notes").value.trim() || null,
+    items: items
+  };
+
+  returnBusy = true;
+  $("saveBtn").disabled = true;
+  $("saveBtn").textContent = "Saving...";
+
+  try {
+    const result = await api("/sales-returns/", {
+      method:"POST",
+      body:JSON.stringify(payload)
+    });
+
+    const saved = unwrapObject(result, "sales_return");
+    const returnNo = saved.return_number ?? saved.return_no ?? saved.return_code ??
+                     saved.id ?? result.return_number ?? result.id ?? "Saved";
+
+    message("Sales Return save ho gayi. Return No: " + returnNo +
+      "\nReturn Amount: " + money(saved.total_amount ?? saved.return_total ?? saved.total ?? total),
+      "ok");
+
+    $("saleCard").hidden = true;
+    currentSale = null;
+    $("saleSearch").value = "";
+    await loadHistory();
+  } catch (error) {
+    message("Sales Return save nahi hui: " + error.message +
+      "\nAgar validation error aaye to /docs mein POST /sales-returns/ ka required request body check karein.", "error");
+  } finally {
+    returnBusy = false;
+    $("saveBtn").disabled = false;
+    $("saveBtn").textContent = "Save Sales Return";
+  }
+}
+
+async function loadHistory() {
+  if (historyBusy) return;
+  historyBusy = true;
+  $("historyBody").innerHTML = '<tr><td colspan="7" class="empty">Loading history...</td></tr>';
+
+  try {
+    const query = $("historySearch").value.trim();
+    const result = await api("/sales-returns/?search=" + encodeURIComponent(query) + "&page=1&limit=100");
+    const rows = unwrapList(result, ["sales_returns","returns","items","results"]);
+
+    if (!rows.length) {
+      $("historyBody").innerHTML = '<tr><td colspan="7" class="empty">No sales returns found.</td></tr>';
+      return;
+    }
+
+    $("historyBody").innerHTML = rows.map(row => {
+      const id = row.id ?? row.return_id ?? row.sales_return_id;
+      const returnNo = row.return_number ?? row.return_no ?? row.return_code ?? id ?? "—";
+      const invoice = row.invoice_number ?? row.invoice_no ?? row.sale_invoice ??
+                      row.sale?.invoice_number ?? row.sale_id ?? "—";
+      const date = row.created_at ?? row.return_date ?? row.date ?? "—";
+      const customer = row.customer_name ?? row.customer?.customer_name ??
+                       row.customer?.name ?? "Walk-in Customer";
+      const method = row.refund_method ?? row.payment_method ?? "—";
+      const amount = row.total_amount ?? row.return_total ?? row.total ?? row.amount ?? 0;
+
+      return `<tr>
+        <td>${esc(returnNo)}</td>
+        <td>${esc(invoice)}</td>
+        <td>${esc(date)}</td>
+        <td>${esc(customer)}</td>
+        <td>${esc(method)}</td>
+        <td>${money(amount)}</td>
+        <td class="no-print"><button class="light" type="button" onclick="printReturn('${esc(id ?? "")}')">View / Print</button></td>
+      </tr>`;
+    }).join("");
+  } catch (error) {
+    $("historyBody").innerHTML = '<tr><td colspan="7" class="empty">History load nahi hui.</td></tr>';
+    message("Sales Return history load nahi hui: " + error.message, "error");
+  } finally {
+    historyBusy = false;
+  }
+}
+
+async function printReturn(id) {
+  if (!id) {
+    message("Return ID available nahi hai.", "error");
+    return;
+  }
+
+  try {
+    const result = await api("/sales-returns/" + encodeURIComponent(id));
+    const record = unwrapObject(result, "sales_return");
+    const items = getSaleItems(record).length
+      ? getSaleItems(record)
+      : (record.items ?? record.return_items ?? record.details ?? []);
+
+    const rows = items.map(item => {
+      const name = getProductName(item);
+      const qty = item.return_quantity ?? item.quantity ?? item.qty ?? 0;
+      const price = getUnitPrice(item);
+      const amount = item.total_amount ?? item.subtotal ?? item.amount ?? (Number(qty) * Number(price));
+      return `<tr><td>${esc(name)}</td><td>${esc(qty)}</td><td>${money(price)}</td><td>${money(amount)}</td></tr>`;
+    }).join("");
+
+    const invoice = record.invoice_number ?? record.invoice_no ??
+                    record.sale?.invoice_number ?? record.sale_id ?? "—";
+    const returnNo = record.return_number ?? record.return_no ?? record.return_code ?? record.id ?? id;
+    const date = record.created_at ?? record.return_date ?? record.date ?? new Date().toLocaleString();
+    const customer = record.customer_name ?? record.customer?.customer_name ??
+                     record.customer?.name ?? "Walk-in Customer";
+    const total = record.total_amount ?? record.return_total ?? record.total ?? record.amount ?? 0;
+    const method = record.refund_method ?? record.payment_method ?? "—";
+    const notes = record.notes ?? record.reason ?? "—";
+
+    const printWindow = window.open("", "_blank", "width=900,height=700");
+    if (!printWindow) {
+      message("Print window block ho gayi. Browser mein pop-ups allow karein.", "error");
+      return;
+    }
+
+    printWindow.document.write(`<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>Sales Return Receipt</title>
+<style>
+body{font-family:Arial,sans-serif;color:#111;padding:24px}
+h1,h2{text-align:center}
+.meta{line-height:1.9;margin:20px 0}
+table{width:100%;border-collapse:collapse;margin-top:20px}
+th,td{border:1px solid #bbb;padding:9px;text-align:left;font-size:13px}
+.total{text-align:right;font-size:20px;font-weight:bold;margin-top:18px}
+.signatures{display:flex;justify-content:space-between;gap:50px;margin-top:90px}
+.signatures div{width:45%;border-top:1px solid #111;text-align:center;padding-top:8px}
+@media print{button{display:none}}
+</style></head><body>
+<h1>Shop Management</h1><h2>Sales Return Receipt</h2>
+<div class="meta">
+<strong>Return No:</strong> ${esc(returnNo)}<br>
+<strong>Original Invoice:</strong> ${esc(invoice)}<br>
+<strong>Date:</strong> ${esc(date)}<br>
+<strong>Customer:</strong> ${esc(customer)}<br>
+<strong>Refund Method:</strong> ${esc(method)}<br>
+<strong>Notes:</strong> ${esc(notes)}
+</div>
+<table><thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Amount</th></tr></thead>
+<tbody>${rows || '<tr><td colspan="4">Item details unavailable</td></tr>'}</tbody></table>
+<div class="total">Return Total: ${money(total)}</div>
+<div class="signatures">
+<div>Customer Signature</div>
+<div>Authorized Signature</div>
+</div>
+<script>window.onload=function(){window.print();};<\/script>
+</body></html>`);
+    printWindow.document.close();
+  } catch (error) {
+    message("Receipt load nahi hui: " + error.message, "error");
+  }
+}
+
+async function setup() {
+  try {
+    await api("/sales-returns/setup", {method:"POST"});
+  } catch (error) {
+    message("Sales Return setup request complete nahi hui: " + error.message +
+      "\nAgar setup endpoint available nahi hai, /docs mein Sales Return routes check karein.", "error");
+  }
+  await loadHistory();
+}
+
+$("saleSearch").addEventListener("keydown", event => {
+  if (event.key === "Enter") findSale();
+});
+$("historySearch").addEventListener("keydown", event => {
+  if (event.key === "Enter") loadHistory();
+});
+
+setup();
+</script>
+</body>
+</html>
+```

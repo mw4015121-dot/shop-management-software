@@ -1,0 +1,999 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoices | Shop Management Software</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+header {
+    background: #172554;
+    color: white;
+    padding: 20px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+header h1 { margin: 0; font-size: 25px; }
+header p { margin: 6px 0 0; color: #dbeafe; }
+
+.container {
+    max-width: 1450px;
+    margin: 24px auto;
+    padding: 0 18px;
+}
+
+.panel, .summary, .toolbar {
+    background: white;
+    padding: 18px;
+    margin-bottom: 18px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px #0000000c;
+}
+
+.toolbar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+    gap: 12px;
+    align-items: end;
+}
+
+label {
+    display: block;
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+    background: white;
+}
+
+button, .link-button {
+    border: 0;
+    border-radius: 6px;
+    padding: 10px 13px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.primary { background: #2563eb; color: white; }
+.success { background: #15803d; color: white; }
+.secondary { background: #475569; color: white; }
+.danger { background: #b91c1c; color: white; }
+
+.summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 14px;
+}
+
+.stat {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.stat span {
+    display: block;
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 8px;
+}
+
+.stat strong { font-size: 22px; }
+
+.table-wrap { overflow-x: auto; }
+
+table {
+    width: 100%;
+    min-width: 850px;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 11px 9px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+    font-size: 13px;
+}
+
+th { background: #f8fafc; }
+
+.status {
+    display: inline-block;
+    padding: 5px 8px;
+    border-radius: 15px;
+    background: #e2e8f0;
+    font-size: 12px;
+}
+
+.status-paid { background: #dcfce7; color: #166534; }
+.status-due { background: #fee2e2; color: #991b1b; }
+.status-cancelled { background: #e2e8f0; color: #475569; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.small { padding: 7px 9px; font-size: 12px; }
+
+.message {
+    background: #eff6ff;
+    color: #1e40af;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    white-space: pre-wrap;
+}
+
+.error { background: #fee2e2; color: #991b1b; }
+.hidden { display: none !important; }
+.empty { text-align: center; padding: 28px; color: #64748b; }
+
+.invoice-heading {
+    text-align: center;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #172554;
+}
+
+.invoice-heading h2 { margin: 0; font-size: 27px; }
+.invoice-heading p { margin: 6px 0; }
+
+.invoice-info {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+    gap: 14px;
+    margin: 20px 0;
+}
+
+.info-item {
+    padding: 10px;
+    background: #f8fafc;
+    border-radius: 5px;
+    overflow-wrap: anywhere;
+}
+
+.info-label {
+    color: #64748b;
+    font-size: 12px;
+}
+
+.info-value {
+    display: block;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+.totals {
+    max-width: 380px;
+    margin: 20px 0 20px auto;
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 8px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.total-row.grand {
+    font-size: 18px;
+    font-weight: bold;
+    border-bottom: 2px solid #172554;
+}
+
+.signatures {
+    display: flex;
+    justify-content: space-between;
+    gap: 35px;
+    margin-top: 65px;
+    page-break-inside: avoid;
+}
+
+.signature {
+    width: 220px;
+    text-align: center;
+    padding-top: 8px;
+    border-top: 1px solid #333;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+@media(max-width: 600px) {
+    .container { padding: 0 9px; }
+    .panel, .toolbar, .summary { padding: 12px; }
+    .invoice-info { grid-template-columns: 1fr; }
+    header { padding: 16px; }
+}
+
+@media print {
+    body { background: white; color: black; }
+    header, .toolbar, .summary, #message,
+    #invoiceListPanel, #detailsActions, footer,
+    .no-print { display: none !important; }
+
+    .container { margin: 0; padding: 0; max-width: none; }
+    #detailsPanel {
+        display: block !important;
+        box-shadow: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    #invoiceDetails, #paymentHistorySection { display: block !important; }
+
+    table { min-width: 0; }
+    th, td { font-size: 10px; padding: 6px 4px; }
+
+    .info-item { background: white; }
+    .signatures { break-inside: avoid; }
+
+    @page { size: A4; margin: 12mm; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div>
+        <h1>🧾 Invoices</h1>
+        <p>Shop Management Software</p>
+    </div>
+    <a class="link-button secondary" href="/frontend/dashboard.html">
+        ← Dashboard
+    </a>
+</header>
+
+<main class="container">
+
+    <div id="message" class="message">Loading invoices...</div>
+
+    <section class="toolbar no-print">
+        <div>
+            <label for="searchInput">Invoice / Customer Search</label>
+            <input id="searchInput" type="search"
+                   placeholder="Enter invoice number or customer">
+        </div>
+
+        <div>
+            <label for="fromDate">From Date</label>
+            <input id="fromDate" type="date">
+        </div>
+
+        <div>
+            <label for="toDate">To Date</label>
+            <input id="toDate" type="date">
+        </div>
+
+        <div>
+            <label for="paymentFilter">Payment Status</label>
+            <select id="paymentFilter">
+                <option value="">All</option>
+                <option value="paid">Paid</option>
+                <option value="due">Due / Partial</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+        </div>
+
+        <div class="actions">
+            <button class="primary" id="searchButton">Search</button>
+            <button class="secondary" id="resetButton">Reset</button>
+            <button class="success" id="refreshButton">↻ Refresh</button>
+        </div>
+    </section>
+
+    <section class="summary">
+        <div class="stat">
+            <span>Invoices Found</span>
+            <strong id="totalInvoices">0</strong>
+        </div>
+        <div class="stat">
+            <span>Total Sales</span>
+            <strong id="totalSales">Rs. 0.00</strong>
+        </div>
+        <div class="stat">
+            <span>Total Paid</span>
+            <strong id="totalPaid">Rs. 0.00</strong>
+        </div>
+        <div class="stat">
+            <span>Total Due</span>
+            <strong id="totalDue">Rs. 0.00</strong>
+        </div>
+    </section>
+
+    <section class="panel" id="invoiceListPanel">
+        <h2>Sales Invoice List</h2>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Invoice No.</th>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Total</th>
+                        <th>Paid</th>
+                        <th>Due</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="invoiceTableBody">
+                    <tr><td colspan="8" class="empty">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p id="resultCount">0 invoices</p>
+    </section>
+
+    <section class="panel hidden" id="detailsPanel">
+        <div id="detailsActions" class="actions no-print"
+             style="margin-bottom:20px">
+            <button class="secondary" id="backToListButton">← Back</button>
+            <button class="success" id="printButton">🖨 Print Invoice</button>
+            <button class="primary" id="downloadPdfButton">📄 Save as PDF</button>
+            <button class="secondary" id="paymentHistoryButton">
+                💳 Payment History
+            </button>
+        </div>
+
+        <div id="invoiceDetails"></div>
+        <section id="paymentHistorySection" style="margin-top:30px"></section>
+    </section>
+
+</main>
+
+<footer>Shop Management Software</footer>
+
+<script>
+"use strict";
+
+const API_BASE = window.location.origin;
+
+let allSales = [];
+let visibleSales = [];
+let selectedSale = null;
+
+const $ = id => document.getElementById(id);
+
+function money(value) {
+    const n = Number(value ?? 0);
+    return "Rs. " + (Number.isFinite(n) ? n : 0).toLocaleString(
+        "en-PK",
+        { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+    );
+}
+
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, ch => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[ch]);
+}
+
+function firstValue(obj, keys, fallback = null) {
+    for (const key of keys) {
+        if (obj && obj[key] !== undefined && obj[key] !== null) {
+            return obj[key];
+        }
+    }
+    return fallback;
+}
+
+function getSaleId(sale) {
+    return firstValue(sale, ["id", "sale_id"]);
+}
+
+function getInvoiceNumber(sale) {
+    return firstValue(
+        sale,
+        ["invoice_number", "invoice_no", "sale_code",
+         "sale_number", "reference", "id"],
+        "N/A"
+    );
+}
+
+function getCustomer(sale) {
+    const customer = firstValue(
+        sale, ["customer_name", "customer", "customerName"],
+        "Walk-in Customer"
+    );
+
+    if (customer && typeof customer === "object") {
+        return firstValue(
+            customer, ["customer_name", "name", "full_name"], "Customer"
+        );
+    }
+
+    return customer;
+}
+
+function getDate(sale) {
+    return firstValue(
+        sale, ["sale_date", "created_at", "date", "invoice_date"], ""
+    );
+}
+
+function getTotal(sale) {
+    return Number(firstValue(
+        sale,
+        ["grand_total", "total_amount", "total", "net_total",
+         "final_total", "amount"],
+        0
+    )) || 0;
+}
+
+function getPaid(sale) {
+    return Number(firstValue(
+        sale, ["paid_amount", "amount_paid", "paid", "paid_total"], 0
+    )) || 0;
+}
+
+function getDue(sale) {
+    const due = firstValue(
+        sale, ["due_amount", "balance_due", "due", "remaining_amount"]
+    );
+
+    if (due !== null) return Number(due) || 0;
+    return Math.max(0, getTotal(sale) - getPaid(sale));
+}
+
+function getStatus(sale) {
+    const status = String(firstValue(
+        sale, ["payment_status", "status"], ""
+    )).toLowerCase();
+
+    if (status.includes("cancel")) return "Cancelled";
+    if (getDue(sale) <= 0 && getTotal(sale) > 0) return "Paid";
+    if (getPaid(sale) > 0) return "Partial";
+    return "Due";
+}
+
+function statusClass(sale) {
+    const status = getStatus(sale);
+    if (status === "Paid") return "status-paid";
+    if (status === "Cancelled") return "status-cancelled";
+    return "status-due";
+}
+
+function formatDate(value) {
+    if (!value) return "—";
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+
+    return date.toLocaleString("en-PK", {
+        year: "numeric",
+        month: "short",
+        day: "2-digit"
+    });
+}
+
+function showMessage(text, isError = false) {
+    $("message").textContent = text;
+    $("message").classList.remove("hidden");
+    $("message").classList.toggle("error", isError);
+}
+
+function hideMessage() {
+    $("message").classList.add("hidden");
+}
+
+async function apiGet(path) {
+    const response = await fetch(API_BASE + path, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: { "Accept": "application/json" }
+    });
+
+    if (!response.ok) {
+        throw new Error(path + " returned HTTP " + response.status);
+    }
+
+    return response.json();
+}
+
+function normalizeList(data, keys = []) {
+    if (Array.isArray(data)) return data;
+
+    for (const key of keys) {
+        if (data && Array.isArray(data[key])) return data[key];
+    }
+
+    return null;
+}
+
+async function loadSales() {
+    showMessage("Loading sales records...");
+
+    try {
+        const data = await apiGet("/sales/");
+        const sales = normalizeList(
+            data, ["sales", "items", "results", "data"]
+        );
+
+        if (sales === null) {
+            throw new Error(
+                "Sales response format is not recognized. " +
+                "Please check GET /sales/ in Swagger."
+            );
+        }
+
+        allSales = sales;
+        applyFilters();
+        hideMessage();
+
+        if (allSales.length === 0) {
+            showMessage(
+                "No sales records found. Sales/POS se sale create " +
+                "karne ke baad Refresh karein."
+            );
+        }
+    } catch (error) {
+        allSales = [];
+        visibleSales = [];
+        renderTable();
+        updateSummary();
+        showMessage(
+            "Invoices load nahi ho sakin.\n" + error.message +
+            "\n\nServer aur GET /sales/ endpoint check karein.",
+            true
+        );
+    }
+}
+
+function applyFilters() {
+    const query = $("searchInput").value.trim().toLowerCase();
+    const from = $("fromDate").value;
+    const to = $("toDate").value;
+    const filter = $("paymentFilter").value;
+
+    visibleSales = allSales.filter(sale => {
+        const number = String(getInvoiceNumber(sale)).toLowerCase();
+        const customer = String(getCustomer(sale)).toLowerCase();
+        const date = String(getDate(sale)).slice(0, 10);
+        const status = getStatus(sale);
+        const due = getDue(sale);
+
+        if (query && !number.includes(query) &&
+            !customer.includes(query)) return false;
+
+        if (from && date && date < from) return false;
+        if (to && date && date > to) return false;
+
+        if (filter === "paid" && due > 0) return false;
+        if (filter === "due" && due <= 0) return false;
+        if (filter === "cancelled" && status !== "Cancelled") return false;
+
+        return true;
+    });
+
+    renderTable();
+    updateSummary();
+}
+
+function updateSummary() {
+    $("totalInvoices").textContent = visibleSales.length;
+
+    $("totalSales").textContent = money(
+        visibleSales.reduce((sum, sale) => sum + getTotal(sale), 0)
+    );
+
+    $("totalPaid").textContent = money(
+        visibleSales.reduce((sum, sale) => sum + getPaid(sale), 0)
+    );
+
+    $("totalDue").textContent = money(
+        visibleSales.reduce((sum, sale) => sum + getDue(sale), 0)
+    );
+
+    $("resultCount").textContent =
+        visibleSales.length + " invoice(s) found";
+}
+
+function renderTable() {
+    const tbody = $("invoiceTableBody");
+
+    if (!visibleSales.length) {
+        tbody.innerHTML =
+            '<tr><td colspan="8" class="empty">No invoices found.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = visibleSales.map((sale, index) => `
+        <tr>
+            <td>${escapeHTML(getInvoiceNumber(sale))}</td>
+            <td>${escapeHTML(formatDate(getDate(sale)))}</td>
+            <td>${escapeHTML(getCustomer(sale))}</td>
+            <td>${money(getTotal(sale))}</td>
+            <td>${money(getPaid(sale))}</td>
+            <td>${money(getDue(sale))}</td>
+            <td><span class="status ${statusClass(sale)}">
+                ${escapeHTML(getStatus(sale))}
+            </span></td>
+            <td>
+                <div class="actions">
+                    <button class="primary small" data-action="view"
+                        data-index="${index}">Details</button>
+                    <button class="success small" data-action="print"
+                        data-index="${index}">Print</button>
+                </div>
+            </td>
+        </tr>
+    `).join("");
+
+    tbody.querySelectorAll("button").forEach(button => {
+        button.addEventListener("click", async () => {
+            const sale = visibleSales[Number(button.dataset.index)];
+            if (!sale) return;
+
+            await openInvoice(sale, button.dataset.action === "print");
+        });
+    });
+}
+
+function getItems(sale) {
+    const items = firstValue(
+        sale,
+        ["items", "sale_items", "details", "products", "order_items"],
+        []
+    );
+
+    return Array.isArray(items) ? items : [];
+}
+
+function renderInvoice(sale) {
+    const items = getItems(sale);
+
+    const itemRows = items.length ? items.map((item, index) => {
+        const name = firstValue(
+            item, ["product_name", "name", "title", "description"],
+            "Product " + (index + 1)
+        );
+
+        const quantity = Number(firstValue(
+            item, ["quantity", "qty", "sold_quantity"], 0
+        )) || 0;
+
+        const price = Number(firstValue(
+            item, ["unit_price", "selling_price", "price", "rate"], 0
+        )) || 0;
+
+        const discount = Number(firstValue(
+            item, ["discount_amount", "discount"], 0
+        )) || 0;
+
+        const amount = Number(firstValue(
+            item, ["line_total", "total", "subtotal", "amount"],
+            quantity * price - discount
+        )) || 0;
+
+        return `
+            <tr>
+                <td>${index + 1}</td>
+                <td>${escapeHTML(name)}</td>
+                <td>${quantity}</td>
+                <td>${money(price)}</td>
+                <td>${money(discount)}</td>
+                <td>${money(amount)}</td>
+            </tr>
+        `;
+    }).join("") : `
+        <tr>
+            <td colspan="6" class="empty">
+                Product details were not included in the sale response.
+            </td>
+        </tr>
+    `;
+
+    const subtotal = Number(firstValue(
+        sale, ["subtotal", "sub_total", "items_total"], getTotal(sale)
+    )) || 0;
+
+    const discount = Number(firstValue(
+        sale, ["discount_amount", "discount", "total_discount"], 0
+    )) || 0;
+
+    const customerId = firstValue(
+        sale, ["customer_id", "customerId"], "—"
+    );
+
+    const paymentMethod = firstValue(
+        sale, ["payment_method", "payment_type"], "—"
+    );
+
+    $("invoiceDetails").innerHTML = `
+        <div class="invoice-heading">
+            <h2>SALES INVOICE</h2>
+            <p>Shop Management Software</p>
+            <p>Customer Receipt</p>
+        </div>
+
+        <div class="invoice-info">
+            <div class="info-item">
+                <span class="info-label">Invoice Number</span>
+                <span class="info-value">
+                    ${escapeHTML(getInvoiceNumber(sale))}
+                </span>
+            </div>
+
+            <div class="info-item">
+                <span class="info-label">Invoice Date</span>
+                <span class="info-value">
+                    ${escapeHTML(formatDate(getDate(sale)))}
+                </span>
+            </div>
+
+            <div class="info-item">
+                <span class="info-label">Customer</span>
+                <span class="info-value">
+                    ${escapeHTML(getCustomer(sale))}
+                </span>
+            </div>
+
+            <div class="info-item">
+                <span class="info-label">Customer ID</span>
+                <span class="info-value">${escapeHTML(customerId)}</span>
+            </div>
+
+            <div class="info-item">
+                <span class="info-label">Payment Method</span>
+                <span class="info-value">${escapeHTML(paymentMethod)}</span>
+            </div>
+
+            <div class="info-item">
+                <span class="info-label">Payment Status</span>
+                <span class="info-value">${escapeHTML(getStatus(sale))}</span>
+            </div>
+        </div>
+
+        <h3>Product Details</h3>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Unit Price</th>
+                        <th>Discount</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>${itemRows}</tbody>
+            </table>
+        </div>
+
+        <div class="totals">
+            <div class="total-row">
+                <span>Subtotal</span>
+                <strong>${money(subtotal)}</strong>
+            </div>
+            <div class="total-row">
+                <span>Discount</span>
+                <strong>${money(discount)}</strong>
+            </div>
+            <div class="total-row grand">
+                <span>Grand Total</span>
+                <strong>${money(getTotal(sale))}</strong>
+            </div>
+            <div class="total-row">
+                <span>Paid Amount</span>
+                <strong>${money(getPaid(sale))}</strong>
+            </div>
+            <div class="total-row">
+                <span>Due Amount</span>
+                <strong>${money(getDue(sale))}</strong>
+            </div>
+        </div>
+
+        <p><strong>Notes:</strong>
+            ${escapeHTML(firstValue(sale, ["notes", "remarks"], "—"))}
+        </p>
+
+        <div class="signatures">
+            <div class="signature">Customer Signature</div>
+            <div class="signature">Authorized Signature</div>
+        </div>
+
+        <p style="text-align:center;margin-top:30px">
+            Thank you for your business!
+        </p>
+    `;
+}
+
+/*
+ Payment history is matched by the exact invoice reference.
+ Customer name alone is not sufficient to prove a payment belongs
+ to one particular invoice.
+*/
+async function loadPaymentHistory(sale) {
+    const section = $("paymentHistorySection");
+    section.innerHTML = "<h3>Payment History</h3><p>Loading...</p>";
+
+    const invoiceNumber = String(getInvoiceNumber(sale)).trim();
+
+    try {
+        const data = await apiGet("/payments/");
+        const payments = normalizeList(
+            data, ["payments", "items", "results", "data"]
+        );
+
+        if (payments === null) {
+            throw new Error("Payment response format not recognized.");
+        }
+
+        const matched = payments.filter(payment => {
+            const type = String(payment.payment_type || "").toLowerCase();
+            const reference = String(payment.reference || "").trim();
+
+            return type === "customer" &&
+                reference !== "" &&
+                reference === invoiceNumber;
+        });
+
+        if (!matched.length) {
+            section.innerHTML = `
+                <h3>Payment History</h3>
+                <p>No payments linked to invoice
+                   <strong>${escapeHTML(invoiceNumber)}</strong> were found.</p>
+                <p>To show payment history, the Payments module must save
+                   the exact invoice number in the payment reference field.</p>
+            `;
+            return;
+        }
+
+        const rows = matched.map(payment => `
+            <tr>
+                <td>${escapeHTML(payment.reference || "—")}</td>
+                <td>${escapeHTML(payment.payment_date || "—")}</td>
+                <td>${escapeHTML(payment.payment_time || "—")}</td>
+                <td>${escapeHTML(payment.payment_method || "—")}</td>
+                <td>${money(payment.amount)}</td>
+                <td>${escapeHTML(payment.status || "—")}</td>
+            </tr>
+        `).join("");
+
+        const historyTotal = matched.reduce(
+            (sum, payment) => sum + (Number(payment.amount) || 0), 0
+        );
+
+        section.innerHTML = `
+            <h3>Payment History</h3>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Reference</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Method</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+            <p><strong>Matched payment records total:</strong>
+                ${money(historyTotal)}
+            </p>
+        `;
+    } catch (error) {
+        section.innerHTML = `
+            <h3>Payment History</h3>
+            <p>Payment history could not be loaded:
+                ${escapeHTML(error.message)}</p>
+        `;
+    }
+}
+
+async function openInvoice(sale, shouldPrint = false) {
+    selectedSale = sale;
+
+    const id = getSaleId(sale);
+
+    if (id !== null && id !== undefined) {
+        try {
+            const detail = await apiGet(
+                "/sales/" + encodeURIComponent(id)
+            );
+
+            if (detail && typeof detail === "object" &&
+                !Array.isArray(detail)) {
+                sale = detail.sale || detail;
+                selectedSale = sale;
+            }
+        } catch (error) {
+            console.warn("Could not load sale details:", error);
+        }
+    }
+
+    renderInvoice(sale);
+
+    $("invoiceListPanel").classList.add("hidden");
+    $("detailsPanel").classList.remove("hidden");
+
+    await loadPaymentHistory(sale);
+
+    if (shouldPrint) {
+        setTimeout(() => window.print(), 250);
+    } else {
+        $("detailsPanel").scrollIntoView({ behavior: "smooth" });
+    }
+}
+
+function backToList() {
+    $("detailsPanel").classList.add("hidden");
+    $("invoiceListPanel").classList.remove("hidden");
+    selectedSale = null;
+}
+
+function downloadPdf() {
+    if (!selectedSale) {
+        alert("Please open an invoice first.");
+        return;
+    }
+
+    // In the browser print dialog, choose "Save as PDF".
+    window.print();
+}
+
+$("searchButton").addEventListener("click", applyFilters);
+$("refreshButton").addEventListener("click", loadSales);
+
+$("resetButton").addEventListener("click", () => {
+    $("searchInput").value = "";
+    $("fromDate").value = "";
+    $("toDate").value = "";
+    $("paymentFilter").value = "";
+    applyFilters();
+});
+
+$("searchInput").addEventListener("input", applyFilters);
+$("fromDate").addEventListener("change", applyFilters);
+$("toDate").addEventListener("change", applyFilters);
+$("paymentFilter").addEventListener("change", applyFilters);
+
+$("backToListButton").addEventListener("click", backToList);
+$("printButton").addEventListener("click", () => window.print());
+$("downloadPdfButton").addEventListener("click", downloadPdf);
+
+$("paymentHistoryButton").addEventListener("click", () => {
+    $("paymentHistorySection").scrollIntoView({ behavior: "smooth" });
+});
+
+loadSales();
+</script>
+
+</body>
+</html>

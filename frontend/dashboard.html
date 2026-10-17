@@ -1,0 +1,329 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Shop Management Software - Dashboard</title>
+
+<style>
+* { box-sizing: border-box; }
+
+html.auth-check body {
+    visibility: hidden;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+header {
+    background: #0f172a;
+    color: white;
+    padding: 18px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+header h2 {
+    margin: 0;
+    font-size: 22px;
+}
+
+nav {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+nav a, nav button {
+    color: white;
+    text-decoration: none;
+    background: #2563eb;
+    border: none;
+    padding: 10px 13px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+nav a:hover { background: #1d4ed8; }
+nav .logout { background: #dc2626; }
+nav .logout:hover { background: #b91c1c; }
+
+.container {
+    max-width: 1250px;
+    margin: auto;
+    padding: 25px;
+}
+
+.welcome {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px #0000000d;
+}
+
+.welcome h1 {
+    margin: 0 0 10px;
+    color: #0f172a;
+}
+
+.welcome p {
+    color: #64748b;
+    margin-bottom: 0;
+    line-height: 1.6;
+}
+
+.section-title { margin: 25px 0 15px; }
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+}
+
+.card {
+    background: white;
+    padding: 22px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px #0000000d;
+    border-left: 5px solid #2563eb;
+    display: flex;
+    flex-direction: column;
+}
+
+.card h3 {
+    margin: 0 0 10px;
+    font-size: 18px;
+}
+
+.card p {
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 45px;
+    flex-grow: 1;
+}
+
+.card button {
+    width: 100%;
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.card button:hover { background: #1d4ed8; }
+
+.blue { border-color: #2563eb; }
+.green { border-color: #16a34a; }
+.orange { border-color: #ea580c; }
+.purple { border-color: #9333ea; }
+.red { border-color: #dc2626; }
+.teal { border-color: #0d9488; }
+
+.notice {
+    display: none;
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 8px;
+    background: #fef3c7;
+    color: #92400e;
+    line-height: 1.5;
+}
+
+footer {
+    text-align: center;
+    padding: 25px;
+    color: #64748b;
+}
+
+@media (max-width: 600px) {
+    header { padding: 15px; }
+    header h2 { font-size: 19px; }
+    .container { padding: 15px; }
+    nav { width: 100%; }
+    nav a, nav button {
+        flex: 1;
+        text-align: center;
+    }
+    .cards { grid-template-columns: 1fr; }
+}
+</style>
+
+<!-- Login session verification -->
+<script>
+document.documentElement.classList.add("auth-check");
+
+(async function checkLogin() {
+    try {
+        const response = await fetch("/auth/me", {
+            method: "GET",
+            credentials: "same-origin",
+            cache: "no-store"
+        });
+
+        if (!response.ok) {
+            window.location.replace("/frontend/login.html");
+            return;
+        }
+
+        const admin = await response.json();
+
+        if (!admin.logged_in) {
+            window.location.replace("/frontend/login.html");
+            return;
+        }
+
+        document.documentElement.classList.remove("auth-check");
+    } catch (error) {
+        window.location.replace("/frontend/login.html");
+    }
+})();
+</script>
+</head>
+
+<body>
+<header>
+    <h2>Shop Management System</h2>
+    <nav>
+        <a href="/frontend/dashboard.html">Dashboard</a>
+        <a href="/frontend/products.html">Products</a>
+        <a href="/frontend/customers.html">Customers</a>
+        <button type="button" class="logout" onclick="logout()">Logout</button>
+    </nav>
+</header>
+
+<main class="container">
+    <section class="welcome">
+        <h1>Welcome to Dashboard</h1>
+        <p>
+            Manage your shop products, customers, suppliers,
+            purchases, sales and other business activities.
+        </p>
+        <div id="notice" class="notice"></div>
+    </section>
+
+    <h2 class="section-title">Main Modules</h2>
+
+    <section class="cards">
+        <div class="card blue">
+            <h3>📦 Products</h3>
+            <p>Add, search, update products and manage stock.</p>
+            <button onclick="openPage('products.html')">Manage Products</button>
+        </div>
+
+        <div class="card green">
+            <h3>👥 Customers</h3>
+            <p>Manage customer records and outstanding balances.</p>
+            <button onclick="openPage('customers.html')">Manage Customers</button>
+        </div>
+
+        <div class="card orange">
+            <h3>🏢 Suppliers</h3>
+            <p>Add suppliers and manage supplier information.</p>
+            <button onclick="openPage('suppliers.html')">Manage Suppliers</button>
+        </div>
+
+        <div class="card purple">
+            <h3>🛒 Purchases</h3>
+            <p>Record purchases and view purchase history.</p>
+            <button onclick="openPage('purchases.html')">Manage Purchases</button>
+        </div>
+
+        <div class="card red">
+            <h3>💳 Sales / POS</h3>
+            <p>Create sales, add products and process customer bills.</p>
+            <button onclick="openPage('sales.html')">Open Sales</button>
+        </div>
+
+        <div class="card teal">
+            <h3>↩️ Sales Return</h3>
+            <p>Find sales and record returned products.</p>
+            <button onclick="openPage('sales-return.html')">Sales Return</button>
+        </div>
+
+        <div class="card blue">
+            <h3>📊 Inventory</h3>
+            <p>Review stock levels and low-stock products.</p>
+            <button onclick="openPage('inventory.html')">View Inventory</button>
+        </div>
+
+        <div class="card green">
+            <h3>💰 Expenses</h3>
+            <p>Record and review shop expenses.</p>
+            <button onclick="openPage('expenses.html')">Manage Expenses</button>
+        </div>
+
+        <div class="card orange">
+            <h3>👨‍💼 Staff Management</h3>
+            <p>Manage staff details, attendance and salaries.</p>
+            <button onclick="openPage('staff.html')">Manage Staff</button>
+        </div>
+
+        <div class="card purple">
+            <h3>📈 Reports</h3>
+            <p>Review sales, purchases, stock and business reports.</p>
+            <button onclick="openPage('reports.html')">View Reports</button>
+        </div>
+
+        <div class="card teal">
+            <h3>💵 Payments</h3>
+            <p>Manage payments and outstanding balances.</p>
+            <button onclick="openPage('payments.html')">Manage Payments</button>
+        </div>
+
+        <div class="card red">
+            <h3>🧾 Invoices</h3>
+            <p>Access invoices and print customer receipts.</p>
+            <button onclick="openPage('invoices.html')">View Invoices</button>
+        </div>
+    </section>
+</main>
+
+<footer>
+    Shop Management Software 1.0.0 | Dashboard
+</footer>
+
+<script>
+function openPage(page) {
+    window.location.href = "/frontend/" + page;
+}
+
+async function logout() {
+    const notice = document.getElementById("notice");
+
+    try {
+        const response = await fetch("/auth/logout", {
+            method: "POST",
+            credentials: "same-origin",
+            cache: "no-store"
+        });
+
+        if (response.ok) {
+            window.location.replace("/frontend/login.html");
+            return;
+        }
+
+        notice.textContent = "Logout failed. Please try again.";
+        notice.style.display = "block";
+    } catch (error) {
+        notice.textContent = "Server connection failed. Please try again.";
+        notice.style.display = "block";
+    }
+}
+</script>
+</body>
+</html>

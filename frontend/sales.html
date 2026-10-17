@@ -1,0 +1,489 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop Management - Sales POS</title>
+<style>
+:root {
+  --navy:#0f172a; --navy2:#172554; --blue:#2563eb;
+  --bg:#f1f5f9; --text:#1e293b; --muted:#64748b;
+  --border:#e2e8f0; --green:#16a34a; --red:#dc2626;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select,textarea{font:inherit}
+button{border:0;border-radius:8px;padding:10px 14px;cursor:pointer;font-size:13px;font-weight:bold}
+button:disabled{opacity:.55;cursor:not-allowed}
+button:hover:not(:disabled){filter:brightness(.94)}
+.primary{background:var(--blue);color:white}
+.secondary{background:#334155;color:white}
+.success{background:var(--green);color:white}
+.danger{background:var(--red);color:white}
+.light{background:#e2e8f0;color:#0f172a}
+.small{padding:7px 10px;font-size:12px}
+header{background:linear-gradient(115deg,var(--navy),var(--navy2));color:white;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-icon{background:var(--blue);border-radius:11px;padding:11px;font-size:22px}
+header h1{font-size:20px;margin:0}
+header p{font-size:12px;color:#cbd5e1;margin:5px 0 0}
+.header-actions{display:flex;gap:9px;flex-wrap:wrap}
+header a{display:inline-block;color:white;text-decoration:none;background:#334155;padding:11px 14px;border-radius:8px;font-size:13px}
+header a:hover{background:#475569}
+.container{max-width:1500px;margin:23px auto;padding:0 16px}
+.page-intro,.card-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.page-intro{margin-bottom:20px}
+.page-intro h2{margin:0;font-size:23px}
+.page-intro p,.card-subtitle{color:var(--muted);font-size:12px;margin:6px 0 0}
+.date-label{font-size:13px;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
+.stat,.card{background:white;border:1px solid var(--border);border-radius:13px;box-shadow:0 3px 12px #0f172a08}
+.stat{padding:17px;min-width:0}
+.stat-label{font-size:12px;color:var(--muted);margin-bottom:9px}
+.stat-value{font-size:22px;font-weight:800;overflow-wrap:anywhere}
+.stat-note{font-size:11px;color:var(--muted);margin-top:7px}
+.stat-icon{float:right;font-size:20px;background:#dbeafe;border-radius:9px;padding:7px}
+.pos-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,.85fr);gap:18px;align-items:start}
+.card{padding:19px;margin-bottom:18px;min-width:0}
+.card-heading{margin-bottom:17px}
+.card-heading h3{font-size:17px;margin:0}
+.pill{background:#dbeafe;color:#1d4ed8;border-radius:20px;padding:5px 9px;font-size:11px;font-weight:bold}
+.field{min-width:0;margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:bold;margin-bottom:7px}
+input,select,textarea{width:100%;padding:11px 12px;border:1px solid #cbd5e1;border-radius:8px;background:white;color:var(--text);font-size:13px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px #2563eb18}
+textarea{resize:vertical}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>.field{flex:1;min-width:120px}
+.product-toolbar{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:10px}
+.search-wrap{position:relative}
+.search-wrap input{padding-left:35px}
+.search-symbol{position:absolute;left:12px;top:10px;color:var(--muted)}
+.product-results{border:1px solid var(--border);border-radius:10px;margin-top:12px;max-height:390px;overflow:auto}
+.product-result{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px;border-bottom:1px solid #eef2f7}
+.product-result:last-child{border-bottom:0}
+.product-result:hover{background:#f8fafc}
+.product-info{min-width:0;overflow-wrap:anywhere}
+.product-name{font-size:13px;font-weight:bold}
+.product-code,.stock-label{font-size:11px;color:var(--muted);margin-top:5px}
+.product-price{font-size:14px;font-weight:bold;color:#1d4ed8;margin-top:6px}
+.empty{text-align:center;padding:25px 12px;color:var(--muted);font-size:13px}
+.hint{font-size:11px;color:var(--muted);line-height:1.6;margin:10px 0 0}
+.billing-card{position:sticky;top:12px}
+.totals{background:#f8fafc;padding:12px 14px;border-radius:10px;margin-top:5px}
+.total-row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
+.total-row:last-child{border-bottom:0}
+.total-row strong{text-align:right}
+.total-row.grand{font-size:19px;font-weight:bold;color:#166534;padding:13px 0}
+.complete-btn{width:100%;margin-top:15px;padding:14px;font-size:14px}
+.table-wrap{width:100%;overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:650px}
+th,td{padding:11px 9px;border-bottom:1px solid var(--border);text-align:left;font-size:12px;vertical-align:middle}
+th{background:#f8fafc;color:#475569;font-size:11px;text-transform:uppercase}
+tbody tr:hover{background:#fafcff}
+.number{text-align:right}
+.qty-input{width:78px;padding:8px}
+.badge{display:inline-block;background:#e0f2fe;color:#075985;padding:5px 8px;border-radius:20px;font-size:11px;font-weight:bold}
+.badge.paid{background:#dcfce7;color:#166534}
+.badge.partial{background:#fef3c7;color:#92400e}
+.badge.due{background:#fee2e2;color:#991b1b}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.cart-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:13px;padding-top:13px;border-top:1px solid var(--border)}
+.cart-count{font-size:12px;color:var(--muted)}
+.history-toolbar{display:grid;grid-template-columns:minmax(180px,1fr) auto auto;gap:9px;margin-bottom:14px}
+.notice{display:none;padding:13px 15px;border-radius:9px;margin-bottom:17px;white-space:pre-wrap;line-height:1.6;font-size:13px}
+.notice.error{display:block;background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+.notice.ok{display:block;background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
+.footer-note{text-align:center;color:var(--muted);font-size:11px;padding:8px 0 20px}
+@media(max-width:1000px){.pos-grid{grid-template-columns:1fr}.billing-card{position:static}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){header{padding:15px}.brand-icon{font-size:18px}header h1{font-size:16px}.container{padding:0 10px;margin:16px auto}.card{padding:14px}.stats{gap:9px}.stat{padding:12px}.stat-value{font-size:17px}.product-toolbar{grid-template-columns:1fr}.row>.field{min-width:100%}.history-toolbar{grid-template-columns:1fr 1fr}.history-toolbar input{grid-column:1/-1}}
+@media print{.no-print,header,.stats,.page-intro,#message,#productsCard,#billingCard,#cartCard,#historyCard,.footer-note{display:none!important}body{background:white}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="brand-icon">🛒</div>
+    <div>
+      <h1>Shop Management Software</h1>
+      <p>Sales Point of Sale · Billing & Invoices</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <a href="/frontend/dashboard.html">← Dashboard</a>
+    <a href="/docs" target="_blank" rel="noopener">API Docs</a>
+  </div>
+</header>
+
+<main class="container">
+  <div class="page-intro">
+    <div><h2>Sales / POS</h2><p>Manage products, customer bills and sales invoices.</p></div>
+    <div class="date-label" id="currentDate"></div>
+  </div>
+
+  <div id="message" class="notice" role="status"></div>
+
+  <section class="stats">
+    <div class="stat"><div class="stat-icon">🧾</div><div class="stat-label">Loaded Invoices</div><div class="stat-value" id="statInvoices">0</div><div class="stat-note">Loaded sales history</div></div>
+    <div class="stat"><div class="stat-icon">💰</div><div class="stat-label">Sales Total</div><div class="stat-value" id="statSales">Rs. 0.00</div><div class="stat-note">Loaded records only</div></div>
+    <div class="stat"><div class="stat-icon">✅</div><div class="stat-label">Paid Total</div><div class="stat-value" id="statPaid">Rs. 0.00</div><div class="stat-note">Paid amount in loaded sales</div></div>
+    <div class="stat"><div class="stat-icon">⏳</div><div class="stat-label">Outstanding Due</div><div class="stat-value" id="statDue">Rs. 0.00</div><div class="stat-note">Due amount in loaded sales</div></div>
+  </section>
+
+  <div class="pos-grid">
+    <section class="card" id="productsCard">
+      <div class="card-heading">
+        <div><h3>Find Products</h3><div class="card-subtitle">Search by name, code or barcode.</div></div>
+        <span class="pill" id="productCount">0 Products</span>
+      </div>
+      <div class="product-toolbar">
+        <div class="field" style="margin:0"><div class="search-wrap"><span class="search-symbol">⌕</span><input id="productSearch" placeholder="Search product..." autocomplete="off"></div></div>
+        <div class="field" style="margin:0"><select id="categoryFilter"><option value="">All Categories</option></select></div>
+      </div>
+      <div id="productResults" class="product-results"><div class="empty">Loading products...</div></div>
+      <p class="hint">Add products to the cart. Quantity cannot exceed available stock.</p>
+    </section>
+
+    <section class="card billing-card" id="billingCard">
+      <div class="card-heading"><div><h3>Sale Details</h3><div class="card-subtitle">Customer and payment information.</div></div><span class="pill">New Sale</span></div>
+      <div class="field"><label for="customer">Customer</label><select id="customer"><option value="">Walk-in Customer</option></select></div>
+      <div class="row">
+        <div class="field"><label for="discount">Discount (Rs.)</label><input id="discount" type="number" min="0" step="0.01" value="0"></div>
+        <div class="field"><label for="paymentMethod">Payment Method</label><select id="paymentMethod"><option>Cash</option><option>Easypaisa</option><option>JazzCash</option><option>NayaPay</option><option>Bank</option><option>Other</option></select></div>
+      </div>
+      <div class="field"><label for="paidAmount">Paid Amount (Rs.)</label><input id="paidAmount" type="number" min="0" step="0.01" value="0"><p class="hint">Enter amount received from customer.</p></div>
+      <div class="field"><label for="notes">Notes (Optional)</label><textarea id="notes" rows="2" placeholder="Sale notes..."></textarea></div>
+      <div class="totals">
+        <div class="total-row"><span>Subtotal</span><strong id="subtotal">Rs. 0.00</strong></div>
+        <div class="total-row"><span>Discount</span><strong id="discountView">Rs. 0.00</strong></div>
+        <div class="total-row grand"><span>Grand Total</span><span id="grandTotal">Rs. 0.00</span></div>
+        <div class="total-row"><span>Paid</span><strong id="paidView">Rs. 0.00</strong></div>
+        <div class="total-row"><span>Due</span><strong id="dueView">Rs. 0.00</strong></div>
+      </div>
+      <button id="completeSale" class="success complete-btn" onclick="completeSale()">✓ Complete Sale</button>
+      <p class="hint" style="text-align:center">Verify the bill before saving.</p>
+    </section>
+  </div>
+
+  <section class="card" id="cartCard">
+    <div class="card-heading"><div><h3>Shopping Cart</h3><div class="card-subtitle">Review products and quantities.</div></div><button class="light no-print" onclick="clearCart()">Clear Cart</button></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Product</th><th>Available Stock</th><th>Unit Price</th><th>Quantity</th><th class="number">Line Total</th><th class="no-print">Action</th></tr></thead>
+      <tbody id="cartBody"><tr><td colspan="6" class="empty">Your cart is empty.</td></tr></tbody>
+    </table></div>
+    <div class="cart-footer"><span class="cart-count" id="cartCount">0 items in cart</span><button class="primary no-print" onclick="focusProducts()">+ Add More Products</button></div>
+  </section>
+
+  <section class="card" id="historyCard">
+    <div class="card-heading"><div><h3>Sales History</h3><div class="card-subtitle">Search saved invoices and print them.</div></div><button class="primary no-print" onclick="loadSales()">↻ Refresh History</button></div>
+    <div class="history-toolbar no-print">
+      <input id="historySearch" placeholder="Search invoice number...">
+      <button class="secondary" onclick="loadSales()">Search</button>
+      <button class="light" onclick="resetHistorySearch()">Reset</button>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>ID</th><th>Invoice</th><th>Date</th><th>Total</th><th>Paid</th><th>Due</th><th>Status</th><th class="no-print">Action</th></tr></thead>
+      <tbody id="salesBody"><tr><td colspan="8" class="empty">Loading sales...</td></tr></tbody>
+    </table></div>
+    <p class="hint">Summary totals use the records returned by the Sales API.</p>
+  </section>
+  <div class="footer-note">Shop Management Software · Sales / POS</div>
+</main>
+
+<script>
+const API = "";
+let products = [], customers = [], cart = [];
+
+const $ = id => document.getElementById(id);
+const money = n => "Rs. " + Number(n || 0).toLocaleString("en-PK",{minimumFractionDigits:2,maximumFractionDigits:2});
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function showMessage(text,type="ok") {
+  $("message").textContent = text;
+  $("message").className = "notice " + type;
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function clearMessage() {$("message").className="notice";$("message").textContent="";}
+
+async function api(url,options={}) {
+  const response = await fetch(API+url,{...options,headers:{"Content-Type":"application/json",...(options.headers||{})}});
+  const text = await response.text();
+  let data={};
+  try {data=text?JSON.parse(text):{};} catch {data={detail:text};}
+  if(!response.ok) {
+    let message=data.detail||data.message||("HTTP Error "+response.status);
+    if(Array.isArray(message)) message=message.map(e=>e.msg||JSON.stringify(e)).join(", ");
+    throw new Error(String(message));
+  }
+  return data;
+}
+function unwrapList(data,keys) {
+  if(Array.isArray(data)) return data;
+  for(const key of keys) if(Array.isArray(data?.[key])) return data[key];
+  return [];
+}
+function productName(p){return p.product_name||p.name||"Unnamed Product";}
+function productPrice(p){return Number(p.final_price??p.selling_price??p.price??0);}
+function productStock(p){return Number(p.stock_quantity??p.stock??p.quantity??0);}
+function productCode(p){return p.product_code||p.barcode||"";}
+function productCategory(p){return p.category_name||p.category||"Uncategorized";}
+function saleId(s){return Number(s.id??s.sale_id??0);}
+function saleInvoice(s){return s.invoice_no||s.invoice_number||("SALE-"+saleId(s));}
+function saleTotal(s){return Number(s.grand_total??s.total_amount??s.total??0);}
+function salePaid(s){return Number(s.paid_amount??s.paid??0);}
+function saleDue(s){return Number(s.due_amount??s.due??Math.max(0,saleTotal(s)-salePaid(s)));}
+
+async function loadProducts() {
+  try {
+    let data;
+    try {data=await api("/products/?page=1&limit=100");}
+    catch {data=await api("/products?page=1&limit=100");}
+    products=unwrapList(data,["products","items","data"]);
+    renderCategoryFilter();
+    renderProducts($("productSearch").value);
+  } catch(error) {
+    $("productResults").innerHTML='<div class="empty">Products could not be loaded.</div>';
+    showMessage("Products could not be loaded: "+error.message,"error");
+  }
+}
+function renderCategoryFilter() {
+  const previous=$("categoryFilter").value;
+  const categories=[...new Set(products.map(productCategory).filter(c=>c&&c!=="Uncategorized"))].sort();
+  $("categoryFilter").innerHTML='<option value="">All Categories</option>'+categories.map(c=>`<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join("");
+  if(categories.includes(previous)) $("categoryFilter").value=previous;
+}
+function renderProducts(query="") {
+  const q=query.trim().toLowerCase(),category=$("categoryFilter").value;
+  const matches=products.filter(p=>{
+    const searchable=[productName(p),p.product_code,p.barcode,productCategory(p)].join(" ").toLowerCase();
+    const active=!(p.is_active===false||p.is_active===0||String(p.status||"").toLowerCase()==="inactive");
+    return searchable.includes(q)&&(!category||productCategory(p)===category)&&active;
+  }).slice(0,100);
+  $("productCount").textContent=matches.length+" Products";
+  if(!matches.length){$("productResults").innerHTML='<div class="empty">No matching products found.</div>';return;}
+  $("productResults").innerHTML=matches.map(p=>{
+    const stock=productStock(p),id=Number(p.id);
+    return `<div class="product-result"><div class="product-info">
+      <div class="product-name">${escapeHTML(productName(p))}</div>
+      <div class="product-code">${escapeHTML(productCode(p)||"No product code")}</div>
+      <div class="product-price">${money(productPrice(p))}</div>
+      <div class="stock-label">Available stock: ${stock}</div>
+      </div><button class="primary small" ${stock<=0||!id?"disabled":""} onclick="addToCart(${id})">+ Add</button></div>`;
+  }).join("");
+}
+function addToCart(id) {
+  clearMessage();
+  const p=products.find(x=>Number(x.id)===Number(id));
+  if(!p){showMessage("Product not found. Refresh the list.","error");return;}
+  const stock=productStock(p),existing=cart.find(x=>x.id===Number(id));
+  if(stock<=0){showMessage("This product is out of stock.","error");return;}
+  if(existing) {
+    if(existing.quantity>=stock){showMessage("Quantity cannot exceed available stock.","error");return;}
+    existing.quantity++;
+  } else cart.push({id:Number(p.id),name:productName(p),code:productCode(p),price:productPrice(p),stock,quantity:1});
+  renderCart();
+}
+function changeQuantity(id,value) {
+  const item=cart.find(p=>p.id===Number(id));if(!item)return;
+  const qty=Number(value);
+  if(!Number.isInteger(qty)||qty<1){showMessage("Quantity must be at least 1.","error");renderCart();return;}
+  if(qty>item.stock){showMessage("Quantity cannot exceed available stock.","error");renderCart();return;}
+  item.quantity=qty;clearMessage();renderCart();
+}
+function removeFromCart(id){cart=cart.filter(p=>p.id!==Number(id));renderCart();}
+function clearCart(){if(!cart.length||confirm("Clear all products from the cart?")){cart=[];renderCart();}}
+function focusProducts(){$("productSearch").focus();$("productsCard").scrollIntoView({behavior:"smooth",block:"start"});}
+function getTotals() {
+  const subtotal=cart.reduce((sum,p)=>sum+p.price*p.quantity,0);
+  const rawDiscount=Number($("discount").value);
+  const discount=Math.min(Math.max(0,Number.isFinite(rawDiscount)?rawDiscount:0),subtotal);
+  const grand=Math.max(0,subtotal-discount);
+  const rawPaid=Number($("paidAmount").value);
+  const paid=Math.max(0,Number.isFinite(rawPaid)?rawPaid:0);
+  return {subtotal,discount,grand,paid,due:Math.max(0,grand-paid)};
+}
+function renderCart() {
+  $("cartBody").innerHTML=!cart.length
+    ?'<tr><td colspan="6" class="empty">Your cart is empty. Add products to begin.</td></tr>'
+    :cart.map(p=>`<tr>
+      <td><strong>${escapeHTML(p.name)}</strong><div class="product-code">${escapeHTML(p.code)}</div></td>
+      <td>${p.stock}</td><td>${money(p.price)}</td>
+      <td><input class="qty-input" aria-label="Quantity" type="number" min="1" max="${p.stock}" step="1" value="${p.quantity}" onchange="changeQuantity(${p.id},this.value)"></td>
+      <td class="number"><strong>${money(p.price*p.quantity)}</strong></td>
+      <td class="no-print"><button class="danger small" onclick="removeFromCart(${p.id})">Remove</button></td>
+      </tr>`).join("");
+  const t=getTotals();
+  $("subtotal").textContent=money(t.subtotal);$("discountView").textContent=money(t.discount);
+  $("grandTotal").textContent=money(t.grand);$("paidView").textContent=money(t.paid);$("dueView").textContent=money(t.due);
+  $("cartCount").textContent=cart.reduce((sum,p)=>sum+p.quantity,0)+" items in cart";
+}
+async function loadCustomers() {
+  try {
+    let data;
+    try {data=await api("/customers");}
+    catch {data=await api("/customers/");}
+    customers=unwrapList(data,["customers","items","data"]);
+    $("customer").innerHTML='<option value="">Walk-in Customer</option>'+customers.filter(c=>c.status===undefined||String(c.status).toLowerCase()==="active").map(c=>`<option value="${Number(c.id)}">${escapeHTML(c.customer_name||c.name||("Customer #"+c.id))}</option>`).join("");
+  } catch(error) {
+    $("customer").innerHTML='<option value="">Walk-in Customer</option>';
+    console.warn("Customer list unavailable:",error.message);
+  }
+}
+async function completeSale() {
+  clearMessage();
+  if(!cart.length){showMessage("Please add at least one product to the cart.","error");return;}
+  const t=getTotals(),paid=Number($("paidAmount").value),discount=Number($("discount").value);
+  if(!Number.isFinite(paid)||paid<0){showMessage("Enter a valid paid amount.","error");return;}
+  if(paid>t.grand){showMessage("Paid amount cannot exceed the grand total.","error");return;}
+  if(!Number.isFinite(discount)||discount<0){showMessage("Enter a valid non-negative discount.","error");return;}
+  if(!confirm("Complete this sale for "+money(t.grand)+"?"))return;
+
+  const button=$("completeSale");button.disabled=true;button.textContent="Saving Sale...";
+  const cartSnapshot=cart.map(p=>({...p}));
+  const customerName=$("customer").selectedOptions[0]?.textContent||"Walk-in Customer";
+  const notes=$("notes").value.trim();
+  const payload={
+    customer_id:$("customer").value?Number($("customer").value):null,
+    items:cart.map(p=>({product_id:p.id,quantity:p.quantity})),
+    discount:t.discount,paid_amount:paid,
+    payment_method:$("paymentMethod").value,notes
+  };
+  try {
+    const result=await api("/sales/",{method:"POST",body:JSON.stringify(payload)});
+    const sale=result.sale||result.data||result;
+    const id=sale.id||sale.sale_id||result.sale_id;
+    const invoice=sale.invoice_no||sale.invoice_number||result.invoice_no||("SALE-"+(id||""));
+    const total=Number(sale.grand_total??sale.total_amount??t.grand);
+    const paidValue=Number(sale.paid_amount??paid);
+    const due=Number(sale.due_amount??Math.max(0,total-paidValue));
+    showMessage("Sale saved successfully!\nInvoice: "+invoice+"\nTotal: "+money(total)+"\nPaid: "+money(paidValue)+"\nDue: "+money(due),"ok");
+
+    if(id) printInvoice({
+      invoice,id,date:sale.created_at||sale.sale_date||new Date().toLocaleString(),
+      customer:sale.customer_name||customerName,
+      items:cartSnapshot.map(p=>({name:p.name,quantity:p.quantity,price:p.price})),
+      subtotal:Number(sale.subtotal??t.subtotal),discount:Number(sale.discount??t.discount),
+      grand_total:total,paid_amount:paidValue,due_amount:due,
+      payment_method:sale.payment_method||$("paymentMethod").value,notes:sale.notes||notes
+    });
+
+    cart=[];$("discount").value=0;$("paidAmount").value=0;$("notes").value="";
+    renderCart();await loadProducts();await loadSales();
+  } catch(error) {
+    showMessage("Sale could not be saved: "+error.message,"error");
+  } finally {button.disabled=false;button.textContent="✓ Complete Sale";}
+}
+function statusLabel(s) {
+  const raw=String(s.status||"").toLowerCase();
+  if(raw.includes("cancel"))return {text:s.status,cls:"due"};
+  if(saleDue(s)<=0)return {text:"Paid",cls:"paid"};
+  if(salePaid(s)>0)return {text:"Partial",cls:"partial"};
+  return {text:s.status||"Due",cls:"due"};
+}
+function renderHistorySummary(sales) {
+  $("statInvoices").textContent=sales.length.toLocaleString("en-PK");
+  $("statSales").textContent=money(sales.reduce((sum,s)=>sum+saleTotal(s),0));
+  $("statPaid").textContent=money(sales.reduce((sum,s)=>sum+salePaid(s),0));
+  $("statDue").textContent=money(sales.reduce((sum,s)=>sum+saleDue(s),0));
+}
+async function loadSales() {
+  $("salesBody").innerHTML='<tr><td colspan="8" class="empty">Loading sales...</td></tr>';
+  const q=$("historySearch").value.trim();
+  try {
+    const params=new URLSearchParams({page:"1",limit:"50"});
+    if(q)params.set("search",q);
+    const data=await api("/sales/?"+params.toString());
+    const sales=unwrapList(data,["sales","items","data"]);
+    renderHistorySummary(sales);
+    if(!sales.length){$("salesBody").innerHTML='<tr><td colspan="8" class="empty">No sales found.</td></tr>';return;}
+    $("salesBody").innerHTML=sales.map(s=>{
+      const id=saleId(s),status=statusLabel(s),date=s.created_at||s.sale_date||s.date||"-";
+      return `<tr><td>${id||"-"}</td><td><strong>${escapeHTML(saleInvoice(s))}</strong></td>
+        <td>${escapeHTML(date)}</td><td>${money(saleTotal(s))}</td><td>${money(salePaid(s))}</td><td>${money(saleDue(s))}</td>
+        <td><span class="badge ${status.cls}">${escapeHTML(status.text)}</span></td>
+        <td class="no-print"><button class="primary small" onclick="viewSale(${id})">View / Print</button></td></tr>`;
+    }).join("");
+  } catch(error) {
+    renderHistorySummary([]);
+    $("salesBody").innerHTML='<tr><td colspan="8" class="empty">Could not load sales: '+escapeHTML(error.message)+'</td></tr>';
+  }
+}
+function resetHistorySearch(){$("historySearch").value="";loadSales();}
+
+async function viewSale(id) {
+  try {
+    const result=await api("/sales/"+id);
+    const sale=result.sale||result.data||result;
+    const items=sale.items||result.items||sale.sale_items||[];
+    const mapped=items.map(item=>({
+      name:item.product_name||item.name||item.product?.product_name||item.product?.name||"Product",
+      quantity:Number(item.quantity||0),
+      price:Number(item.unit_price??item.price??item.selling_price??0)
+    }));
+    const customer=sale.customer_name||sale.customer?.customer_name||sale.customer?.name||(sale.customer_id?"Customer #"+sale.customer_id:"Walk-in Customer");
+    const subtotal=Number(sale.subtotal??mapped.reduce((sum,p)=>sum+p.price*p.quantity,0));
+    const discount=Number(sale.discount||0);
+    const total=Number(sale.grand_total??sale.total_amount??Math.max(0,subtotal-discount));
+    const paid=Number(sale.paid_amount??sale.paid??0);
+    printInvoice({
+      ...sale,id,invoice:sale.invoice_no||sale.invoice_number||("SALE-"+id),
+      date:sale.created_at||sale.sale_date||sale.date||new Date().toLocaleString(),
+      customer,items:mapped,subtotal,discount,grand_total:total,
+      paid_amount:paid,due_amount:Number(sale.due_amount??sale.due??Math.max(0,total-paid)),
+      payment_method:sale.payment_method||"Cash"
+    });
+  } catch(error) {showMessage("Could not open sale: "+error.message,"error");}
+}
+function printInvoice(sale) {
+  const rows=(sale.items||[]).map(item=>{
+    const qty=Number(item.quantity||0),price=Number(item.price??item.unit_price??0);
+    return `<tr><td>${escapeHTML(item.name||item.product_name||"Product")}</td><td>${qty}</td><td>${money(price)}</td><td>${money(qty*price)}</td></tr>`;
+  }).join("");
+  const w=window.open("","_blank","width=850,height=700");
+  if(!w){showMessage("Please allow pop-ups in your browser to print the invoice.","error");return;}
+  const invoice=sale.invoice||sale.invoice_no||("SALE-"+(sale.id||""));
+  const date=sale.date||sale.created_at||new Date().toLocaleString();
+  const customer=sale.customer||sale.customer_name||"Walk-in Customer";
+  w.document.write(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Invoice ${escapeHTML(invoice)}</title>
+  <style>
+  *{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#111827;margin:25px auto;max-width:850px;padding:0 18px}
+  .header{text-align:center;border-bottom:2px solid #1e293b;padding-bottom:18px}.header h1{margin:0;font-size:25px}.header p{margin:7px 0 0;color:#475569;font-size:12px}
+  .details{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:22px 0}.detail-box{border:1px solid #cbd5e1;border-radius:7px;padding:12px;line-height:1.9;font-size:13px;overflow-wrap:anywhere}
+  table{width:100%;border-collapse:collapse;margin-top:15px}th,td{border:1px solid #cbd5e1;padding:10px;text-align:left;font-size:12px}th{background:#f1f5f9}
+  .totals{width:330px;max-width:100%;margin:20px 0 0 auto}.line{display:flex;justify-content:space-between;gap:12px;padding:8px;border-bottom:1px solid #e2e8f0;font-size:13px}.grand{font-weight:bold;font-size:17px;background:#f8fafc}
+  .notes{margin-top:20px;font-size:13px;white-space:pre-wrap}.signatures{display:flex;justify-content:space-between;gap:35px;margin-top:95px}
+  .signature{width:45%;text-align:center;border-top:1px solid #111827;padding-top:9px;font-size:12px}.footer{text-align:center;margin-top:30px;font-size:11px;color:#64748b}
+  .print-btn{display:block;margin:0 auto 20px;padding:10px 18px;background:#2563eb;color:white;border:0;border-radius:6px;cursor:pointer}
+  @media(max-width:500px){.details{grid-template-columns:1fr}.signatures{gap:20px}.header h1{font-size:20px}}
+  @media print{.print-btn{display:none}body{margin:0 auto;padding:0}.detail-box{break-inside:avoid}}
+  </style></head><body>
+  <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+  <div class="header"><h1>SHOP SALES INVOICE</h1><p>Shop Management Software</p><p>Thank you for your business!</p></div>
+  <div class="details"><div class="detail-box"><strong>Invoice No:</strong> ${escapeHTML(invoice)}<br><strong>Date:</strong> ${escapeHTML(date)}</div>
+  <div class="detail-box"><strong>Customer:</strong> ${escapeHTML(customer)}<br><strong>Payment Method:</strong> ${escapeHTML(sale.payment_method||"Cash")}</div></div>
+  <table><thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Line Total</th></tr></thead><tbody>${rows||'<tr><td colspan="4">No item details available</td></tr>'}</tbody></table>
+  <div class="totals"><div class="line"><span>Subtotal</span><span>${money(sale.subtotal)}</span></div><div class="line"><span>Discount</span><span>${money(sale.discount)}</span></div>
+  <div class="line grand"><span>Grand Total</span><span>${money(sale.grand_total??sale.total_amount)}</span></div><div class="line"><span>Paid Amount</span><span>${money(sale.paid_amount)}</span></div><div class="line"><span>Due Amount</span><span>${money(sale.due_amount)}</span></div></div>
+  ${sale.notes?'<div class="notes"><strong>Notes:</strong><br>'+escapeHTML(sale.notes)+'</div>':''}
+  <div class="signatures"><div class="signature">Customer Signature</div><div class="signature">Authorized Signature</div></div>
+  <div class="footer">Computer Generated Invoice · Thank you for shopping with us</div>
+  <script>window.onload=function(){setTimeout(function(){window.print();},250);};<\/script>
+  </body></html>`);
+  w.document.close();
+}
+
+$("productSearch").addEventListener("input",e=>renderProducts(e.target.value));
+$("categoryFilter").addEventListener("change",()=>renderProducts($("productSearch").value));
+$("discount").addEventListener("input",renderCart);
+$("paidAmount").addEventListener("input",renderCart);
+$("historySearch").addEventListener("keydown",e=>{if(e.key==="Enter")loadSales();});
+$("currentDate").textContent=new Date().toLocaleDateString("en-PK",{weekday:"short",year:"numeric",month:"short",day:"numeric"});
+
+async function init(){renderCart();await Promise.all([loadProducts(),loadCustomers(),loadSales()]);}
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,1010 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Customers - Shop Management</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f4f6f9;
+            color: #222;
+            padding: 25px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        input,
+        select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #333;
+        }
+
+        .buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-save {
+            background: #198754;
+            color: white;
+        }
+
+        .btn-update {
+            background: #0d6efd;
+            color: white;
+        }
+
+        .btn-clear {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-edit {
+            background: #ffc107;
+            color: #000;
+            margin-right: 5px;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.85;
+        }
+
+        .search-box {
+            margin-bottom: 15px;
+        }
+
+        .search-box input {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background: #212529;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .active {
+            color: green;
+            font-weight: bold;
+        }
+
+        .inactive {
+            color: red;
+            font-weight: bold;
+        }
+
+        .message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .success {
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #842029;
+        }
+
+        .date-time {
+            white-space: nowrap;
+        }
+
+        @media (max-width: 700px) {
+            body {
+                padding: 10px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .buttons {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Customer Management</h1>
+
+    <!-- =========================
+         Customer Form
+    ========================== -->
+
+    <div class="card">
+
+        <h2 id="formTitle">Add Customer</h2>
+
+        <br>
+
+        <div class="form-grid">
+
+            <div class="form-group">
+                <label>Customer Code</label>
+
+                <input
+                    type="text"
+                    id="customerCode"
+                    placeholder="Example: C001"
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label>Customer Name *</label>
+
+                <input
+                    type="text"
+                    id="customerName"
+                    placeholder="Enter customer name"
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label>Total Purchase</label>
+
+                <input
+                    type="number"
+                    id="totalPurchase"
+                    value="0"
+                    min="0"
+                    step="0.01"
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label>Total Paid</label>
+
+                <input
+                    type="number"
+                    id="totalPaid"
+                    value="0"
+                    min="0"
+                    step="0.01"
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label>Total Due</label>
+
+                <input
+                    type="number"
+                    id="totalDue"
+                    value="0"
+                    min="0"
+                    step="0.01"
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label>Status</label>
+
+                <select id="status">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+
+        </div>
+
+
+        <div class="buttons">
+
+            <button
+                class="btn-save"
+                id="saveBtn"
+                onclick="saveCustomer()"
+            >
+                Save Customer
+            </button>
+
+
+            <button
+                class="btn-update"
+                id="updateBtn"
+                onclick="updateCustomer()"
+                style="display: none;"
+            >
+                Update Customer
+            </button>
+
+
+            <button
+                class="btn-clear"
+                onclick="clearForm()"
+            >
+                Clear
+            </button>
+
+        </div>
+
+
+        <div id="message" class="message"></div>
+
+    </div>
+
+
+    <!-- =========================
+         Customer List
+    ========================== -->
+
+    <div class="card">
+
+        <h2>Customer List</h2>
+
+        <br>
+
+        <div class="search-box">
+
+            <input
+                type="text"
+                id="searchInput"
+                placeholder="Search by customer name or code..."
+                oninput="searchCustomers()"
+            >
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>ID</th>
+                        <th>Customer Code</th>
+                        <th>Customer Name</th>
+                        <th>Total Purchase</th>
+                        <th>Total Paid</th>
+                        <th>Total Due</th>
+                        <th>Status</th>
+                        <th>Date & Time</th>
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+
+
+                <tbody id="customerTableBody"></tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    // =========================
+    // API
+    // =========================
+
+    const API_URL = window.location.origin;
+
+
+    let customers = [];
+
+    let editingCustomerId = null;
+
+
+    // =========================
+    // Load Customers
+    // =========================
+
+    async function loadCustomers(search = "") {
+
+        try {
+
+            let url = `${API_URL}/customers`;
+
+            if (search.trim() !== "") {
+
+                url += `?search=${encodeURIComponent(search)}`;
+
+            }
+
+
+            const response = await fetch(url);
+
+
+            if (!response.ok) {
+
+                throw new Error("Failed to load customers");
+
+            }
+
+
+            customers = await response.json();
+
+            displayCustomers(customers);
+
+
+        } catch (error) {
+
+            showMessage(error.message, "error");
+
+        }
+
+    }
+
+
+    // =========================
+    // Display Customers
+    // =========================
+
+    function displayCustomers(data) {
+
+        const tableBody =
+            document.getElementById("customerTableBody");
+
+
+        tableBody.innerHTML = "";
+
+
+        if (data.length === 0) {
+
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="9">
+                        No customers found
+                    </td>
+                </tr>
+            `;
+
+            return;
+
+        }
+
+
+        data.forEach(customer => {
+
+            const row = document.createElement("tr");
+
+
+            const dateTime =
+                formatDateTime(customer.created_at);
+
+
+            const statusClass =
+                customer.status === "active"
+                    ? "active"
+                    : "inactive";
+
+
+            row.innerHTML = `
+
+                <td>${customer.id}</td>
+
+                <td>
+                    ${escapeHTML(customer.customer_code || "-")}
+                </td>
+
+                <td>
+                    ${escapeHTML(customer.customer_name)}
+                </td>
+
+                <td>
+                    ${Number(customer.total_purchase).toFixed(2)}
+                </td>
+
+                <td>
+                    ${Number(customer.total_paid).toFixed(2)}
+                </td>
+
+                <td>
+                    ${Number(customer.total_due).toFixed(2)}
+                </td>
+
+                <td class="${statusClass}">
+                    ${escapeHTML(customer.status)}
+                </td>
+
+                <td class="date-time">
+                    ${dateTime}
+                </td>
+
+                <td>
+
+                    <button
+                        class="btn-edit"
+                        onclick="editCustomer(${customer.id})"
+                    >
+                        Edit
+                    </button>
+
+                    <button
+                        class="btn-delete"
+                        onclick="deleteCustomer(${customer.id})"
+                    >
+                        Delete
+                    </button>
+
+                </td>
+
+            `;
+
+
+            tableBody.appendChild(row);
+
+        });
+
+    }
+
+
+    // =========================
+    // Save Customer
+    // =========================
+
+    async function saveCustomer() {
+
+        const customer = getFormData();
+
+
+        if (!customer.customer_name) {
+
+            showMessage(
+                "Customer name is required",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        try {
+
+            const response = await fetch(
+                `${API_URL}/customers`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify(customer)
+                }
+            );
+
+
+            const data = await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.detail || "Failed to save customer"
+                );
+
+            }
+
+
+            showMessage(
+                "Customer added successfully",
+                "success"
+            );
+
+
+            clearForm();
+
+            loadCustomers();
+
+
+        } catch (error) {
+
+            showMessage(
+                error.message,
+                "error"
+            );
+
+        }
+
+    }
+
+
+    // =========================
+    // Edit Customer
+    // =========================
+
+    function editCustomer(id) {
+
+        const customer =
+            customers.find(c => c.id === id);
+
+
+        if (!customer) {
+
+            return;
+
+        }
+
+
+        editingCustomerId = id;
+
+
+        document.getElementById("customerCode").value =
+            customer.customer_code || "";
+
+
+        document.getElementById("customerName").value =
+            customer.customer_name || "";
+
+
+        document.getElementById("totalPurchase").value =
+            customer.total_purchase || 0;
+
+
+        document.getElementById("totalPaid").value =
+            customer.total_paid || 0;
+
+
+        document.getElementById("totalDue").value =
+            customer.total_due || 0;
+
+
+        document.getElementById("status").value =
+            customer.status || "active";
+
+
+        document.getElementById("formTitle").textContent =
+            "Edit Customer";
+
+
+        document.getElementById("saveBtn").style.display =
+            "none";
+
+
+        document.getElementById("updateBtn").style.display =
+            "inline-block";
+
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+
+    }
+
+
+    // =========================
+    // Update Customer
+    // =========================
+
+    async function updateCustomer() {
+
+        if (!editingCustomerId) {
+
+            return;
+
+        }
+
+
+        const customer = getFormData();
+
+
+        if (!customer.customer_name) {
+
+            showMessage(
+                "Customer name is required",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        try {
+
+            const response = await fetch(
+                `${API_URL}/customers/${editingCustomerId}`,
+                {
+                    method: "PUT",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify(customer)
+                }
+            );
+
+
+            const data = await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.detail || "Failed to update customer"
+                );
+
+            }
+
+
+            showMessage(
+                "Customer updated successfully",
+                "success"
+            );
+
+
+            clearForm();
+
+            loadCustomers();
+
+
+        } catch (error) {
+
+            showMessage(
+                error.message,
+                "error"
+            );
+
+        }
+
+    }
+
+
+    // =========================
+    // Delete Customer
+    // =========================
+
+    async function deleteCustomer(id) {
+
+        const confirmDelete =
+            confirm(
+                "Are you sure you want to delete this customer?"
+            );
+
+
+        if (!confirmDelete) {
+
+            return;
+
+        }
+
+
+        try {
+
+            const response = await fetch(
+                `${API_URL}/customers/${id}`,
+                {
+                    method: "DELETE"
+                }
+            );
+
+
+            const data = await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.detail || "Failed to delete customer"
+                );
+
+            }
+
+
+            showMessage(
+                "Customer deleted successfully",
+                "success"
+            );
+
+
+            loadCustomers();
+
+
+        } catch (error) {
+
+            showMessage(
+                error.message,
+                "error"
+            );
+
+        }
+
+    }
+
+
+    // =========================
+    // Search
+    // =========================
+
+    function searchCustomers() {
+
+        const search =
+            document.getElementById("searchInput").value;
+
+
+        loadCustomers(search);
+
+    }
+
+
+    // =========================
+    // Get Form Data
+    // =========================
+
+    function getFormData() {
+
+        return {
+
+            customer_code:
+                document
+                    .getElementById("customerCode")
+                    .value
+                    .trim()
+                || null,
+
+
+            customer_name:
+                document
+                    .getElementById("customerName")
+                    .value
+                    .trim(),
+
+
+            total_purchase:
+                Number(
+                    document
+                        .getElementById("totalPurchase")
+                        .value
+                ) || 0,
+
+
+            total_paid:
+                Number(
+                    document
+                        .getElementById("totalPaid")
+                        .value
+                ) || 0,
+
+
+            total_due:
+                Number(
+                    document
+                        .getElementById("totalDue")
+                        .value
+                ) || 0,
+
+
+            status:
+                document
+                    .getElementById("status")
+                    .value
+
+        };
+
+    }
+
+
+    // =========================
+    // Clear Form
+    // =========================
+
+    function clearForm() {
+
+        editingCustomerId = null;
+
+
+        document.getElementById("customerCode").value = "";
+
+        document.getElementById("customerName").value = "";
+
+        document.getElementById("totalPurchase").value = 0;
+
+        document.getElementById("totalPaid").value = 0;
+
+        document.getElementById("totalDue").value = 0;
+
+        document.getElementById("status").value = "active";
+
+
+        document.getElementById("formTitle").textContent =
+            "Add Customer";
+
+
+        document.getElementById("saveBtn").style.display =
+            "inline-block";
+
+
+        document.getElementById("updateBtn").style.display =
+            "none";
+
+    }
+
+
+    // =========================
+    // Date & Time
+    // =========================
+
+    function formatDateTime(dateString) {
+
+        if (!dateString) {
+
+            return "-";
+
+        }
+
+
+        const date =
+            new Date(dateString);
+
+
+        if (isNaN(date.getTime())) {
+
+            return dateString;
+
+        }
+
+
+        return date.toLocaleString();
+
+    }
+
+
+    // =========================
+    // HTML Escape
+    // =========================
+
+    function escapeHTML(value) {
+
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
+    }
+
+
+    // =========================
+    // Message
+    // =========================
+
+    function showMessage(message, type) {
+
+        const box =
+            document.getElementById("message");
+
+
+        box.textContent = message;
+
+
+        box.className =
+            `message ${type}`;
+
+
+        box.style.display = "block";
+
+
+        setTimeout(() => {
+
+            box.style.display = "none";
+
+        }, 3000);
+
+    }
+
+
+    // =========================
+    // Page Start
+    // =========================
+
+    loadCustomers();
+
+</script>
+
+</body>
+</html>
+```

@@ -1,0 +1,525 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop Management - Inventory</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+header {
+    background: #0f172a;
+    color: white;
+    padding: 18px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+header h2 {
+    margin: 0;
+    font-size: 22px;
+}
+
+header a {
+    color: white;
+    background: #2563eb;
+    text-decoration: none;
+    padding: 10px 14px;
+    border-radius: 6px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 24px;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat, .panel {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px #0000000d;
+}
+
+.stat h3 {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0 0 10px;
+}
+
+.stat strong {
+    font-size: 27px;
+}
+
+.panel {
+    margin-bottom: 20px;
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+input, select, button {
+    padding: 11px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+input {
+    flex: 1;
+    min-width: 180px;
+}
+
+button {
+    background: #2563eb;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #1d4ed8;
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
+}
+
+th, td {
+    padding: 12px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+}
+
+th {
+    background: #f8fafc;
+}
+
+.low {
+    color: #dc2626;
+    font-weight: bold;
+}
+
+.ok {
+    color: #15803d;
+    font-weight: bold;
+}
+
+.message {
+    margin: 10px 0;
+    color: #475569;
+}
+
+.error {
+    color: #dc2626;
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+}
+
+@media(max-width: 600px) {
+    .container {
+        padding: 12px;
+    }
+
+    header {
+        padding: 15px;
+    }
+
+    .stat, .panel {
+        padding: 15px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h2>📊 Inventory Management</h2>
+    <a href="dashboard.html">← Dashboard</a>
+</header>
+
+<main class="container">
+
+    <h1>Inventory Overview</h1>
+
+    <section class="stats">
+        <div class="stat">
+            <h3>Total Products</h3>
+            <strong id="totalProducts">0</strong>
+        </div>
+
+        <div class="stat">
+            <h3>Total Stock Units</h3>
+            <strong id="totalStock">0</strong>
+        </div>
+
+        <div class="stat">
+            <h3>Low Stock Products</h3>
+            <strong id="lowStock" style="color:#dc2626">0</strong>
+        </div>
+
+        <div class="stat">
+            <h3>Out of Stock</h3>
+            <strong id="outStock" style="color:#dc2626">0</strong>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Product Stock List</h2>
+
+        <div class="controls">
+            <input
+                id="search"
+                type="search"
+                placeholder="Search product name, code or barcode..."
+            >
+
+            <select id="filter">
+                <option value="all">All Products</option>
+                <option value="low">Low Stock</option>
+                <option value="out">Out of Stock</option>
+                <option value="available">Available Stock</option>
+            </select>
+
+            <button id="refreshBtn" onclick="loadInventory()">
+                Refresh
+            </button>
+        </div>
+
+        <div id="message" class="message">
+            Loading inventory...
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Product</th>
+                        <th>Code / Barcode</th>
+                        <th>Stock Quantity</th>
+                        <th>Minimum Stock</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+
+                <tbody id="inventoryBody">
+                    <tr>
+                        <td colspan="6">Loading products...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            <button id="prevBtn" onclick="changePage(-1)">
+                Previous
+            </button>
+
+            <span id="pageInfo">Page 1</span>
+
+            <button id="nextBtn" onclick="changePage(1)">
+                Next
+            </button>
+        </div>
+    </section>
+
+</main>
+
+<script>
+let products = [];
+let currentPage = 1;
+const pageLimit = 20;
+let totalPages = 1;
+let requestNumber = 0;
+
+function numberValue(value) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+}
+
+function getStock(product) {
+    return numberValue(
+        product.stock_quantity ??
+        product.stock ??
+        product.quantity
+    );
+}
+
+function getMinimum(product) {
+    return numberValue(
+        product.minimum_stock ??
+        product.min_stock ??
+        product.min_stock_level
+    );
+}
+
+function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[char]);
+}
+
+async function loadSummary() {
+    try {
+        const response = await fetch("/inventory/summary", {
+            credentials: "same-origin"
+        });
+
+        if (!response.ok) {
+            throw new Error("HTTP " + response.status);
+        }
+
+        const data = await response.json();
+
+        document.getElementById("totalProducts").textContent =
+            numberValue(data.total_products);
+
+        document.getElementById("totalStock").textContent =
+            numberValue(data.total_stock);
+
+        document.getElementById("lowStock").textContent =
+            numberValue(data.low_stock);
+
+        document.getElementById("outStock").textContent =
+            numberValue(data.out_of_stock);
+
+    } catch (error) {
+        console.error("Inventory summary error:", error);
+    }
+}
+
+async function loadInventory() {
+    const thisRequest = ++requestNumber;
+    const message = document.getElementById("message");
+    const refreshBtn = document.getElementById("refreshBtn");
+
+    message.className = "message";
+    message.textContent = "Loading inventory...";
+    refreshBtn.disabled = true;
+
+    try {
+        const search = document.getElementById("search")
+            .value.trim();
+
+        const filter = document.getElementById("filter").value;
+
+        const params = new URLSearchParams({
+            search: search,
+            status: filter,
+            page: String(currentPage),
+            limit: String(pageLimit)
+        });
+
+        const response = await fetch(
+            "/inventory/?" + params.toString(),
+            { credentials: "same-origin" }
+        );
+
+        if (!response.ok) {
+            const detail = await response.text();
+            throw new Error(
+                "HTTP " + response.status + ": " + detail
+            );
+        }
+
+        const result = await response.json();
+
+        if (thisRequest !== requestNumber) {
+            return;
+        }
+
+        products = Array.isArray(result)
+            ? result
+            : (result.products || result.items || result.data || []);
+
+        if (!Array.isArray(products)) {
+            products = [];
+        }
+
+        totalPages = Math.max(
+            1,
+            numberValue(result.total_pages) || 1
+        );
+
+        // Agar current page par results nahi aur pehle pages mojood hon.
+        if (
+            products.length === 0 &&
+            currentPage > 1 &&
+            currentPage > totalPages
+        ) {
+            currentPage = totalPages;
+            refreshBtn.disabled = false;
+            return loadInventory();
+        }
+
+        renderInventory(result.total);
+
+        await loadSummary();
+
+    } catch (error) {
+        if (thisRequest !== requestNumber) {
+            return;
+        }
+
+        message.className = "message error";
+        message.textContent =
+            "Inventory load nahi ho saka: " + error.message;
+
+        document.getElementById("inventoryBody").innerHTML =
+            '<tr><td colspan="6">Data load nahi hua.</td></tr>';
+
+    } finally {
+        if (thisRequest === requestNumber) {
+            refreshBtn.disabled = false;
+        }
+    }
+}
+
+function renderInventory(totalFromAPI) {
+    const body = document.getElementById("inventoryBody");
+    const message = document.getElementById("message");
+
+    if (products.length === 0) {
+        body.innerHTML =
+            '<tr><td colspan="6">No products found.</td></tr>';
+    } else {
+        body.innerHTML = products.map(product => {
+            const stock = getStock(product);
+            const minimum = getMinimum(product);
+
+            let status;
+            let statusClass;
+
+            if (stock <= 0) {
+                status = "Out of Stock";
+                statusClass = "low";
+            } else if (minimum > 0 && stock <= minimum) {
+                status = "Low Stock";
+                statusClass = "low";
+            } else {
+                status = "In Stock";
+                statusClass = "ok";
+            }
+
+            const name =
+                product.product_name ||
+                product.name ||
+                "Unnamed Product";
+
+            const code =
+                product.product_code ||
+                product.code ||
+                product.barcode ||
+                "-";
+
+            return `
+                <tr>
+                    <td>${escapeHTML(product.id ?? "-")}</td>
+                    <td>${escapeHTML(name)}</td>
+                    <td>${escapeHTML(code)}</td>
+                    <td>${escapeHTML(stock)}</td>
+                    <td>${escapeHTML(minimum)}</td>
+                    <td>
+                        <span class="${statusClass}">
+                            ${status}
+                        </span>
+                    </td>
+                </tr>
+            `;
+        }).join("");
+    }
+
+    const total = totalFromAPI === undefined
+        ? products.length
+        : numberValue(totalFromAPI);
+
+    message.className = "message";
+    message.textContent =
+        `Showing ${products.length} products on this page. Total matching products: ${total}.`;
+
+    document.getElementById("pageInfo").textContent =
+        `Page ${currentPage} of ${totalPages}`;
+
+    document.getElementById("prevBtn").disabled =
+        currentPage <= 1;
+
+    document.getElementById("nextBtn").disabled =
+        currentPage >= totalPages;
+}
+
+function changePage(direction) {
+    const nextPage = currentPage + direction;
+
+    if (nextPage < 1 || nextPage > totalPages) {
+        return;
+    }
+
+    currentPage = nextPage;
+    loadInventory();
+}
+
+document.getElementById("search").addEventListener("input", () => {
+    currentPage = 1;
+    loadInventory();
+});
+
+document.getElementById("filter").addEventListener("change", () => {
+    currentPage = 1;
+    loadInventory();
+});
+
+loadInventory();
+</script>
+
+</body>
+</html>
+```

@@ -1,0 +1,786 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop Management - Payments</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+header {
+    background: #0f172a;
+    color: white;
+    padding: 18px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+header h2 { margin: 0; }
+
+header a {
+    color: white;
+    text-decoration: none;
+    background: #334155;
+    padding: 10px 15px;
+    border-radius: 6px;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 24px auto;
+    padding: 0 16px;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.card, .panel {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 8px #0000000d;
+}
+
+.card h3 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    color: #64748b;
+}
+
+.card strong {
+    font-size: 25px;
+}
+
+.panel { margin-bottom: 22px; }
+
+.panel h3 {
+    margin-top: 0;
+    margin-bottom: 18px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 15px;
+}
+
+label {
+    display: block;
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 7px;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+    background: white;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 42px;
+}
+
+button {
+    padding: 10px 15px;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    margin: 3px;
+}
+
+.primary { background: #2563eb; color: white; }
+.success { background: #16a34a; color: white; }
+.danger { background: #dc2626; color: white; }
+.secondary { background: #475569; color: white; }
+
+.actions {
+    margin-top: 16px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.table-wrap { overflow-x: auto; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 850px;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 13px;
+}
+
+th {
+    background: #f8fafc;
+    color: #334155;
+}
+
+.badge {
+    padding: 5px 9px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.paid { background: #dcfce7; color: #166534; }
+.pending { background: #fef3c7; color: #92400e; }
+.error { color: #dc2626; }
+.notice { color: #64748b; font-size: 13px; }
+.hidden { display: none !important; }
+
+#message {
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    display: none;
+    white-space: pre-wrap;
+}
+
+#message.ok { display: block; background: #dcfce7; color: #166534; }
+#message.bad { display: block; background: #fee2e2; color: #991b1b; }
+
+@media print {
+    header, .no-print, .cards, #paymentFormPanel, #message {
+        display: none !important;
+    }
+
+    body { background: white; }
+    .container { max-width: none; margin: 0; padding: 0; }
+    .panel { box-shadow: none; padding: 5px; }
+    table { min-width: 0; }
+    th, td { font-size: 10px; padding: 6px; }
+    .print-signatures {
+        display: flex !important;
+        justify-content: space-between;
+        margin-top: 70px;
+    }
+}
+
+.print-signatures { display: none; }
+</style>
+</head>
+
+<body>
+
+<header>
+    <h2>💵 Payments Management</h2>
+    <a href="/frontend/dashboard.html">← Back to Dashboard</a>
+</header>
+
+<div class="container">
+
+    <div id="message"></div>
+
+    <div class="cards">
+        <div class="card">
+            <h3>Payment Records</h3>
+            <strong id="totalRecords">0</strong>
+        </div>
+
+        <div class="card">
+            <h3>Total Received</h3>
+            <strong id="totalReceived">Rs. 0.00</strong>
+        </div>
+
+        <div class="card">
+            <h3>Total Paid to Suppliers</h3>
+            <strong id="totalSupplierPaid">Rs. 0.00</strong>
+        </div>
+
+        <div class="card">
+            <h3>Net Payments</h3>
+            <strong id="netPayments">Rs. 0.00</strong>
+        </div>
+    </div>
+
+    <div class="panel no-print" id="paymentFormPanel">
+        <h3 id="formTitle">Add Payment</h3>
+
+        <form id="paymentForm">
+            <div class="form-grid">
+
+                <div>
+                    <label for="paymentType">Payment Type *</label>
+                    <select id="paymentType" required>
+                        <option value="Customer">Customer Payment Received</option>
+                        <option value="Supplier">Supplier Payment Paid</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="partyName">Customer / Supplier Name *</label>
+                    <input id="partyName" required maxlength="150"
+                           placeholder="Enter customer or supplier name">
+                </div>
+
+                <div>
+                    <label for="reference">Invoice / Reference Number</label>
+                    <input id="reference" maxlength="100"
+                           placeholder="e.g. INV-001 or PUR-001">
+                </div>
+
+                <div>
+                    <label for="amount">Payment Amount (Rs.) *</label>
+                    <input id="amount" type="number" min="0.01"
+                           step="0.01" required placeholder="Enter amount">
+                </div>
+
+                <div>
+                    <label for="paymentMethod">Payment Method *</label>
+                    <select id="paymentMethod" required>
+                        <option value="Cash">Cash</option>
+                        <option value="Bank">Bank Transfer</option>
+                        <option value="EasyPaisa">EasyPaisa</option>
+                        <option value="JazzCash">JazzCash</option>
+                        <option value="Cheque">Cheque</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="paymentDate">Payment Date *</label>
+                    <input id="paymentDate" type="date" required>
+                </div>
+
+                <div>
+                    <label for="paymentTime">Payment Time</label>
+                    <input id="paymentTime" type="time">
+                </div>
+
+                <div>
+                    <label for="paymentStatus">Status</label>
+                    <select id="paymentStatus">
+                        <option value="Completed">Completed</option>
+                        <option value="Pending">Pending</option>
+                    </select>
+                </div>
+
+                <div style="grid-column: 1 / -1;">
+                    <label for="notes">Notes</label>
+                    <textarea id="notes" maxlength="255"
+                              placeholder="Optional payment details"></textarea>
+                </div>
+
+            </div>
+
+            <div class="actions">
+                <button class="primary" type="submit" id="saveButton">
+                    Save Payment
+                </button>
+                <button class="secondary" type="button" onclick="resetForm()">
+                    Clear Form
+                </button>
+            </div>
+        </form>
+
+        <p class="notice">
+            Note: This form requires the backend Payments API before payments
+            can be saved to the database.
+        </p>
+    </div>
+
+    <div class="panel">
+        <h3>Payment History</h3>
+
+        <div class="filters no-print">
+            <div>
+                <label for="search">Search</label>
+                <input id="search" placeholder="Name, reference, method..."
+                       oninput="renderPayments()">
+            </div>
+
+            <div>
+                <label for="typeFilter">Payment Type</label>
+                <select id="typeFilter" onchange="renderPayments()">
+                    <option value="">All Types</option>
+                    <option value="Customer">Customer Received</option>
+                    <option value="Supplier">Supplier Paid</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="startDate">From Date</label>
+                <input id="startDate" type="date" onchange="renderPayments()">
+            </div>
+
+            <div>
+                <label for="endDate">To Date</label>
+                <input id="endDate" type="date" onchange="renderPayments()">
+            </div>
+
+            <div>
+                <label for="pageSize">Rows per page</label>
+                <select id="pageSize" onchange="renderPayments()">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="actions no-print">
+            <button class="secondary" onclick="loadPayments()">Refresh</button>
+            <button class="primary" onclick="window.print()">Print Report</button>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Customer / Supplier</th>
+                        <th>Reference</th>
+                        <th>Method</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th class="no-print">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="paymentsTable">
+                    <tr>
+                        <td colspan="9">Loading payment records...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="actions no-print">
+            <button class="secondary" onclick="previousPage()">Previous</button>
+            <span id="pageInfo" style="padding: 10px;">Page 1</span>
+            <button class="secondary" onclick="nextPage()">Next</button>
+        </div>
+
+        <div class="print-signatures">
+            <div>____________________<br>Prepared By</div>
+            <div>____________________<br>Authorized Person</div>
+            <div>____________________<br>Received By</div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const API = "/payments/";
+
+let payments = [];
+let currentPage = 1;
+let editingId = null;
+
+const $ = id => document.getElementById(id);
+
+function money(value) {
+    return "Rs. " + Number(value || 0).toLocaleString("en-PK", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, ch => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+    })[ch]);
+}
+
+function showMessage(text, isError = false) {
+    const box = $("message");
+    box.textContent = text;
+    box.className = isError ? "bad" : "ok";
+    box.style.display = "block";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function hideMessage() {
+    $("message").style.display = "none";
+}
+
+function setCurrentDateTime() {
+    const now = new Date();
+    const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+
+    $("paymentDate").value = localDate.toISOString().slice(0, 10);
+    $("paymentTime").value = localDate.toISOString().slice(11, 16);
+}
+
+async function requestJSON(url, options = {}) {
+    const response = await fetch(url, {
+        ...options,
+        headers: {
+            "Content-Type": "application/json",
+            ...(options.headers || {})
+        }
+    });
+
+    const text = await response.text();
+    let data = {};
+
+    try {
+        data = text ? JSON.parse(text) : {};
+    } catch {
+        data = { detail: text };
+    }
+
+    if (!response.ok) {
+        throw new Error(data.detail || data.message ||
+                        `Request failed: ${response.status}`);
+    }
+
+    return data;
+}
+
+function extractRows(data) {
+    if (Array.isArray(data)) return data;
+
+    for (const key of ["payments", "items", "data", "results"]) {
+        if (Array.isArray(data?.[key])) return data[key];
+    }
+
+    return [];
+}
+
+async function loadPayments() {
+    try {
+        const data = await requestJSON(API);
+        payments = extractRows(data);
+        currentPage = 1;
+        renderPayments();
+        updateSummary();
+    } catch (error) {
+        payments = [];
+        renderPayments();
+
+        updateSummary();
+
+        showMessage(
+            "Payments API abhi available nahi hai ya response mein error hai.\n" +
+            error.message +
+            "\n\nAgla step: backend payments.py aur database table connect karna hai.",
+            true
+        );
+    }
+}
+
+function getPaymentType(payment) {
+    return payment.payment_type || payment.type || "";
+}
+
+function getPartyName(payment) {
+    return payment.party_name ||
+           payment.customer_name ||
+           payment.supplier_name ||
+           payment.name || "";
+}
+
+function getAmount(payment) {
+    return Number(payment.amount ?? payment.paid_amount ?? 0);
+}
+
+function getPaymentDate(payment) {
+    return String(payment.payment_date || payment.date || "").slice(0, 10);
+}
+
+function updateSummary() {
+    const received = payments
+        .filter(p => getPaymentType(p).toLowerCase() === "customer")
+        .reduce((sum, p) => sum + getAmount(p), 0);
+
+    const supplierPaid = payments
+        .filter(p => getPaymentType(p).toLowerCase() === "supplier")
+        .reduce((sum, p) => sum + getAmount(p), 0);
+
+    $("totalRecords").textContent = payments.length;
+    $("totalReceived").textContent = money(received);
+    $("totalSupplierPaid").textContent = money(supplierPaid);
+    $("netPayments").textContent = money(received - supplierPaid);
+}
+
+function filteredPayments() {
+    const search = $("search").value.trim().toLowerCase();
+    const type = $("typeFilter").value;
+    const start = $("startDate").value;
+    const end = $("endDate").value;
+
+    return payments.filter(p => {
+        const haystack = [
+            getPartyName(p),
+            p.reference || p.reference_no || "",
+            p.payment_method || p.method || "",
+            p.notes || ""
+        ].join(" ").toLowerCase();
+
+        const date = getPaymentDate(p);
+
+        return (!search || haystack.includes(search)) &&
+               (!type || getPaymentType(p).toLowerCase() === type.toLowerCase()) &&
+               (!start || date >= start) &&
+               (!end || date <= end);
+    });
+}
+
+function renderPayments() {
+    const rows = filteredPayments();
+    const pageSize = Number($("pageSize").value || 10);
+    const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    const startIndex = (currentPage - 1) * pageSize;
+    const visibleRows = rows.slice(startIndex, startIndex + pageSize);
+
+    $("pageInfo").textContent =
+        `Page ${currentPage} of ${totalPages} (${rows.length} records)`;
+
+    if (!visibleRows.length) {
+        $("paymentsTable").innerHTML =
+            '<tr><td colspan="9">No payment records found.</td></tr>';
+        return;
+    }
+
+    $("paymentsTable").innerHTML = visibleRows.map(p => {
+        const id = p.id ?? p.payment_id ?? "";
+        const type = getPaymentType(p);
+        const status = p.status || "Completed";
+        const reference = p.reference || p.reference_no || "";
+        const method = p.payment_method || p.method || "";
+
+        return `
+        <tr>
+            <td>${escapeHTML(id)}</td>
+            <td>${escapeHTML(getPaymentDate(p))}</td>
+            <td>${escapeHTML(type)}</td>
+            <td>${escapeHTML(getPartyName(p))}</td>
+            <td>${escapeHTML(reference)}</td>
+            <td>${escapeHTML(method)}</td>
+            <td>${money(getAmount(p))}</td>
+            <td>
+                <span class="badge ${status.toLowerCase() === "completed"
+                    ? "paid" : "pending"}">
+                    ${escapeHTML(status)}
+                </span>
+            </td>
+            <td class="no-print">
+                <button class="primary"
+                    onclick="printReceipt('${escapeHTML(id)}')">
+                    Receipt
+                </button>
+                <button class="danger"
+                    onclick="deletePayment('${escapeHTML(id)}')">
+                    Delete
+                </button>
+            </td>
+        </tr>`;
+    }).join("");
+}
+
+function previousPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        renderPayments();
+    }
+}
+
+function nextPage() {
+    const pageSize = Number($("pageSize").value || 10);
+    const totalPages = Math.max(1, Math.ceil(filteredPayments().length / pageSize));
+
+    if (currentPage < totalPages) {
+        currentPage++;
+        renderPayments();
+    }
+}
+
+function resetForm() {
+    $("paymentForm").reset();
+    editingId = null;
+    $("formTitle").textContent = "Add Payment";
+    $("saveButton").textContent = "Save Payment";
+    setCurrentDateTime();
+    hideMessage();
+}
+
+$("paymentForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    hideMessage();
+
+    const amount = Number($("amount").value);
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+        showMessage("Payment amount zero se zyada hona chahiye.", true);
+        return;
+    }
+
+    const payload = {
+        payment_type: $("paymentType").value,
+        party_name: $("partyName").value.trim(),
+        reference: $("reference").value.trim() || null,
+        amount: amount,
+        payment_method: $("paymentMethod").value,
+        payment_date: $("paymentDate").value,
+        payment_time: $("paymentTime").value || null,
+        status: $("paymentStatus").value,
+        notes: $("notes").value.trim() || null
+    };
+
+    if (!payload.party_name) {
+        showMessage("Customer ya supplier ka naam likhein.", true);
+        return;
+    }
+
+    try {
+        $("saveButton").disabled = true;
+
+        if (editingId !== null) {
+            await requestJSON(`${API}${editingId}`, {
+                method: "PUT",
+                body: JSON.stringify(payload)
+            });
+            showMessage("Payment update ho gayi.");
+        } else {
+            await requestJSON(API, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+            showMessage("Payment save ho gayi.");
+        }
+
+        resetForm();
+        await loadPayments();
+
+    } catch (error) {
+        showMessage(
+            "Payment save nahi hui.\n" + error.message +
+            "\n\nBackend API abhi banana ya correct karna zaroori ho sakta hai.",
+            true
+        );
+    } finally {
+        $("saveButton").disabled = false;
+    }
+});
+
+async function deletePayment(id) {
+    if (!id || !confirm("Kya aap is payment record ko delete karna chahte hain?")) {
+        return;
+    }
+
+    try {
+        await requestJSON(`${API}${id}`, { method: "DELETE" });
+        showMessage("Payment delete ho gayi.");
+        await loadPayments();
+    } catch (error) {
+        showMessage("Payment delete nahi hui: " + error.message, true);
+    }
+}
+
+function printReceipt(id) {
+    const p = payments.find(item =>
+        String(item.id ?? item.payment_id) === String(id)
+    );
+
+    if (!p) {
+        showMessage("Payment record nahi mila.", true);
+        return;
+    }
+
+    const type = getPaymentType(p);
+    const party = getPartyName(p);
+    const reference = p.reference || p.reference_no || "-";
+    const method = p.payment_method || p.method || "-";
+    const date = getPaymentDate(p);
+    const amount = money(getAmount(p));
+    const notes = p.notes || "-";
+
+    const receipt = window.open("", "_blank", "width=800,height=700");
+
+    if (!receipt) {
+        showMessage("Receipt print karne ke liye browser pop-ups allow karein.", true);
+        return;
+    }
+
+    receipt.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Payment Receipt</title>
+            <style>
+                body { font-family: Arial; padding: 35px; color: #111827; }
+                h1, h2 { text-align: center; }
+                .line { border-bottom: 1px solid #ddd; padding: 12px 0; }
+                .signatures {
+                    display: flex; justify-content: space-between;
+                    margin-top: 100px; text-align: center;
+                }
+                @media print { button { display: none; } }
+            </style>
+        </head>
+        <body>
+            <h1>SHOP PAYMENT RECEIPT</h1>
+            <h2>${escapeHTML(type)} Payment</h2>
+            <div class="line"><b>Receipt ID:</b> ${escapeHTML(id)}</div>
+            <div class="line"><b>Date:</b> ${escapeHTML(date)}</div>
+            <div class="line"><b>Name:</b> ${escapeHTML(party)}</div>
+            <div class="line"><b>Reference:</b> ${escapeHTML(reference)}</div>
+            <div class="line"><b>Payment Method:</b> ${escapeHTML(method)}</div>
+            <div class="line"><b>Amount:</b> ${escapeHTML(amount)}</div>
+            <div class="line"><b>Status:</b> ${escapeHTML(p.status || "Completed")}</div>
+            <div class="line"><b>Notes:</b> ${escapeHTML(notes)}</div>
+            <div class="signatures">
+                <div>____________________<br>Prepared By</div>
+                <div>____________________<br>Authorized Person</div>
+                <div>____________________<br>Received By</div>
+            </div>
+            <p style="text-align:center;margin-top:40px;">Thank you.</p>
+            <button onclick="window.print()">Print Receipt</button>
+        </body>
+        </html>
+    `);
+
+    receipt.document.close();
+}
+
+setCurrentDateTime();
+loadPayments();
+</script>
+
+</body>
+</html>
+```

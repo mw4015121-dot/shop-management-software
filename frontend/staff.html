@@ -1,0 +1,759 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff Management - Shop Management Software</title>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f1f5f9;color:#1e293b}
+header{background:#0f172a;color:white;padding:20px 25px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{margin:0;font-size:24px}
+header p{margin:7px 0 0;color:#cbd5e1;font-size:13px}
+.container{max-width:1450px;margin:auto;padding:22px}
+button,a.btn{border:0;border-radius:6px;padding:10px 14px;cursor:pointer;font-size:13px;text-decoration:none;display:inline-block}
+.primary{background:#2563eb;color:white}
+.success{background:#16a34a;color:white}
+.danger{background:#dc2626;color:white}
+.secondary{background:#475569;color:white}
+.warning{background:#d97706;color:white}
+button:hover,a.btn:hover{opacity:.88}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px;margin-bottom:22px}
+.card{background:white;border-radius:10px;padding:19px;box-shadow:0 2px 8px #0000000a}
+.card small{color:#64748b}
+.card h2{margin:10px 0 0;font-size:27px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.tab{background:#e2e8f0;color:#334155}
+.tab.active{background:#2563eb;color:white}
+.panel{background:white;padding:22px;border-radius:10px;box-shadow:0 2px 8px #0000000a;margin-bottom:20px}
+.panel h2{margin-top:0;font-size:20px}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:15px}
+label{display:block;font-size:13px;font-weight:bold;margin-bottom:6px}
+input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px;background:white;color:#1e293b}
+textarea{resize:vertical}
+.field{margin-bottom:5px}
+.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:16px}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:15px}
+.table-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:800px}
+th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;font-size:13px}
+th{background:#f8fafc;color:#475569}
+.badge{padding:5px 8px;border-radius:20px;font-size:11px;background:#dcfce7;color:#166534}
+.muted{color:#64748b}
+.pagination{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:15px}
+.hidden{display:none!important}
+.message{padding:12px;border-radius:6px;margin-bottom:15px;display:none;white-space:pre-wrap}
+.message.ok{display:block;background:#dcfce7;color:#166534}
+.message.error{display:block;background:#fee2e2;color:#991b1b}
+.subheading{margin-top:24px}
+@media(max-width:600px){.container{padding:12px}header{padding:16px}.panel{padding:14px}header h1{font-size:20px}}
+</style>
+</head>
+
+<body>
+<header>
+  <div>
+    <h1>👨‍💼 Staff Management</h1>
+    <p>Manage staff details, attendance and salaries</p>
+  </div>
+  <a class="btn secondary" href="/frontend/dashboard.html">← Dashboard</a>
+</header>
+
+<main class="container">
+  <div id="message" class="message"></div>
+
+  <section class="cards">
+    <div class="card"><small>Total Staff</small><h2 id="totalStaff">0</h2></div>
+    <div class="card"><small>Active Staff</small><h2 id="activeStaff">0</h2></div>
+    <div class="card"><small>Inactive Staff</small><h2 id="inactiveStaff">0</h2></div>
+    <div class="card"><small>Monthly Net Salary</small><h2 id="monthlySalary">Rs. 0</h2></div>
+  </section>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="staffPanel">Staff Details</button>
+    <button class="tab" data-tab="attendancePanel">Attendance</button>
+    <button class="tab" data-tab="salaryPanel">Salary Management</button>
+  </nav>
+
+  <!-- STAFF DETAILS -->
+  <section id="staffPanel" class="panel">
+    <h2 id="staffFormTitle">Add New Staff</h2>
+
+    <form id="staffForm">
+      <input type="hidden" id="staffId">
+
+      <div class="form-grid">
+        <div class="field">
+          <label for="staffCode">Staff Code *</label>
+          <input id="staffCode" maxlength="30" required placeholder="STF001">
+        </div>
+        <div class="field">
+          <label for="staffName">Staff Name *</label>
+          <input id="staffName" maxlength="150" required placeholder="Enter staff name">
+        </div>
+        <div class="field">
+          <label for="designation">Designation *</label>
+          <input id="designation" maxlength="100" required placeholder="Salesman">
+        </div>
+        <div class="field">
+          <label for="joiningDate">Joining Date *</label>
+          <input type="date" id="joiningDate" required>
+        </div>
+        <div class="field">
+          <label for="basicSalary">Basic Salary (Rs.) *</label>
+          <input type="number" id="basicSalary" min="0" step="0.01" required value="0">
+        </div>
+        <div class="field">
+          <label for="staffStatus">Status</label>
+          <select id="staffStatus">
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="primary" id="saveStaffBtn">Save Staff</button>
+        <button type="button" class="secondary" onclick="resetStaffForm()">Clear Form</button>
+      </div>
+    </form>
+
+    <h2 class="subheading">Staff List</h2>
+    <div class="filters">
+      <input id="staffSearch" placeholder="Search name, code or designation">
+      <select id="staffStatusFilter">
+        <option value="">All Statuses</option>
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
+      </select>
+      <button class="primary" onclick="loadStaff(1)">Search</button>
+      <button class="secondary" onclick="printStaffReport()">Print Staff Report</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th><th>Code</th><th>Name</th><th>Designation</th>
+            <th>Joining Date</th><th>Basic Salary</th><th>Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="staffTable">
+          <tr><td colspan="8">Loading staff...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <span id="staffPageInfo" class="muted">Page 1</span>
+      <div class="actions">
+        <button class="secondary" onclick="changeStaffPage(-1)">Previous</button>
+        <button class="secondary" onclick="changeStaffPage(1)">Next</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ATTENDANCE -->
+  <section id="attendancePanel" class="panel hidden">
+    <h2>Mark Staff Attendance</h2>
+
+    <form id="attendanceForm">
+      <div class="form-grid">
+        <div>
+          <label for="attendanceStaff">Select Staff *</label>
+          <select id="attendanceStaff" required>
+            <option value="">Select staff</option>
+          </select>
+        </div>
+        <div>
+          <label for="attendanceDate">Attendance Date *</label>
+          <input type="date" id="attendanceDate" required>
+        </div>
+        <div>
+          <label for="attendanceStatus">Attendance Status *</label>
+          <select id="attendanceStatus" required>
+            <option value="Present">Present</option>
+            <option value="Absent">Absent</option>
+            <option value="Late">Late</option>
+            <option value="Leave">Leave</option>
+          </select>
+        </div>
+        <div>
+          <label for="attendanceNotes">Notes</label>
+          <input id="attendanceNotes" maxlength="255" placeholder="Optional notes">
+        </div>
+      </div>
+      <div class="actions">
+        <button type="submit" class="success">Save Attendance</button>
+      </div>
+    </form>
+
+    <h2 class="subheading">Attendance Records</h2>
+    <div class="filters">
+      <select id="attendanceFilterStaff">
+        <option value="">All Staff</option>
+      </select>
+      <input type="date" id="attendanceFilterDate">
+      <button class="primary" onclick="loadAttendance()">Search Attendance</button>
+      <button class="secondary" onclick="printAttendanceReport()">Print Attendance</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th><th>Staff Code</th><th>Staff Name</th>
+            <th>Status</th><th>Notes</th>
+          </tr>
+        </thead>
+        <tbody id="attendanceTable">
+          <tr><td colspan="5">No attendance loaded.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SALARY -->
+  <section id="salaryPanel" class="panel hidden">
+    <h2>Record Staff Salary</h2>
+
+    <form id="salaryForm">
+      <div class="form-grid">
+        <div>
+          <label for="salaryStaff">Select Staff *</label>
+          <select id="salaryStaff" required>
+            <option value="">Select staff</option>
+          </select>
+        </div>
+        <div>
+          <label for="salaryMonth">Salary Month *</label>
+          <input type="month" id="salaryMonth" required>
+        </div>
+        <div>
+          <label for="salaryBasic">Basic Salary (Rs.) *</label>
+          <input type="number" id="salaryBasic" min="0" step="0.01" required value="0">
+        </div>
+        <div>
+          <label for="salaryBonus">Bonus (Rs.)</label>
+          <input type="number" id="salaryBonus" min="0" step="0.01" value="0" required>
+        </div>
+        <div>
+          <label for="salaryDeductions">Deductions (Rs.)</label>
+          <input type="number" id="salaryDeductions" min="0" step="0.01" value="0" required>
+        </div>
+        <div>
+          <label for="salaryPaid">Paid Amount (Rs.) *</label>
+          <input type="number" id="salaryPaid" min="0" step="0.01" value="0" required>
+        </div>
+        <div>
+          <label for="salaryPaymentDate">Payment Date</label>
+          <input type="date" id="salaryPaymentDate">
+        </div>
+        <div>
+          <label for="salaryNotes">Notes</label>
+          <input id="salaryNotes" maxlength="255" placeholder="Optional notes">
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:15px;background:#f8fafc">
+        <small>Net Salary = Basic + Bonus − Deductions</small>
+        <h2 id="netSalaryPreview">Rs. 0</h2>
+        <p>Remaining: <strong id="remainingSalaryPreview">Rs. 0</strong></p>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="success">Save Salary</button>
+        <button type="reset" class="secondary">Clear Form</button>
+      </div>
+    </form>
+
+    <h2 class="subheading">Salary Records</h2>
+    <div class="filters">
+      <select id="salaryFilterStaff">
+        <option value="">All Staff</option>
+      </select>
+      <input type="month" id="salaryFilterMonth">
+      <button class="primary" onclick="loadSalaries()">Search Salary</button>
+      <button class="secondary" onclick="printSalaryReport()">Print Salary Report</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Month</th><th>Staff Code</th><th>Staff Name</th>
+            <th>Basic</th><th>Bonus</th><th>Deductions</th>
+            <th>Net Salary</th><th>Paid</th><th>Remaining</th><th>Receipt</th>
+          </tr>
+        </thead>
+        <tbody id="salaryTable">
+          <tr><td colspan="10">No salary records loaded.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+const STAFF_API = "/staff/";
+const ATTENDANCE_API = "/staff/attendance";
+const SALARY_API = "/staff/salary";
+
+let staffPage = 1;
+let staffTotalPages = 1;
+let staffRecords = [];
+let attendanceRecords = [];
+let salaryRecords = [];
+
+const $ = id => document.getElementById(id);
+const money = value => "Rs. " + Number(value || 0).toLocaleString("en-PK", {
+  minimumFractionDigits: 2, maximumFractionDigits: 2
+});
+const today = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+};
+const currentMonth = () => today().slice(0,7);
+const escapeHTML = value => String(value ?? "").replace(/[&<>"']/g, ch => ({
+  "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+}[ch]));
+
+function showMessage(message, error=false) {
+  const box = $("message");
+  box.textContent = message;
+  box.className = "message " + (error ? "error" : "ok");
+  window.scrollTo({top:0,behavior:"smooth"});
+  setTimeout(() => { box.className = "message"; }, 5000);
+}
+
+async function api(url, options={}) {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...(options.body ? {"Content-Type":"application/json"} : {}),
+      ...(options.headers || {})
+    }
+  });
+
+  const text = await response.text();
+  let data;
+  try { data = text ? JSON.parse(text) : {}; }
+  catch { data = {detail:text}; }
+
+  if (!response.ok) {
+    throw new Error(data.detail || data.message || `Request failed (${response.status})`);
+  }
+  return data;
+}
+
+function switchTab(tabId) {
+  document.querySelectorAll(".tab").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.tab === tabId);
+  });
+  ["staffPanel","attendancePanel","salaryPanel"].forEach(id => {
+    $(id).classList.toggle("hidden", id !== tabId);
+  });
+}
+
+document.querySelectorAll(".tab").forEach(btn => {
+  btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+});
+
+async function loadSummary() {
+  try {
+    const data = await api("/staff/summary");
+    $("totalStaff").textContent = data.total_staff ?? 0;
+    $("activeStaff").textContent = data.active_staff ?? 0;
+    $("inactiveStaff").textContent = data.inactive_staff ?? 0;
+  } catch(error) {
+    showMessage("Summary error: " + error.message, true);
+  }
+}
+
+async function loadStaff(page=1) {
+  staffPage = page;
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: "10",
+    search: $("staffSearch").value.trim(),
+    status: $("staffStatusFilter").value
+  });
+
+  try {
+    const data = await api(STAFF_API + "?" + params.toString());
+    staffRecords = data.staff || [];
+    staffTotalPages = Math.max(1, data.total_pages || 1);
+
+    $("staffTable").innerHTML = staffRecords.length ? staffRecords.map(s => `
+      <tr>
+        <td>${s.id}</td>
+        <td>${escapeHTML(s.staff_code)}</td>
+        <td>${escapeHTML(s.staff_name)}</td>
+        <td>${escapeHTML(s.designation)}</td>
+        <td>${escapeHTML(s.joining_date)}</td>
+        <td>${money(s.basic_salary)}</td>
+        <td><span class="badge">${escapeHTML(s.status)}</span></td>
+        <td>
+          <button class="primary" onclick="editStaff(${s.id})">Edit</button>
+          <button class="secondary" onclick="printStaffReceipt(${s.id})">Print</button>
+          <button class="danger" onclick="deleteStaff(${s.id})">Delete</button>
+        </td>
+      </tr>`).join("") :
+      '<tr><td colspan="8">No staff records found.</td></tr>';
+
+    $("staffPageInfo").textContent =
+      `Page ${staffPage} of ${staffTotalPages} · Total records: ${data.total || 0}`;
+
+    await populateStaffDropdowns();
+  } catch(error) {
+    $("staffTable").innerHTML =
+      `<tr><td colspan="8">${escapeHTML(error.message)}</td></tr>`;
+    showMessage("Could not load staff: " + error.message, true);
+  }
+}
+
+async function populateStaffDropdowns() {
+  const data = await api(STAFF_API + "?page=1&limit=100&status=Active");
+  const list = data.staff || [];
+  const options = '<option value="">Select staff</option>' +
+    list.map(s => `<option value="${s.id}">${escapeHTML(s.staff_code)} - ${escapeHTML(s.staff_name)}</option>`).join("");
+
+  ["attendanceStaff","salaryStaff"].forEach(id => {
+    const old = $(id).value;
+    $(id).innerHTML = options;
+    if (list.some(s => String(s.id) === old)) $(id).value = old;
+  });
+
+  const filterOptions = '<option value="">All Staff</option>' +
+    list.map(s => `<option value="${s.id}">${escapeHTML(s.staff_code)} - ${escapeHTML(s.staff_name)}</option>`).join("");
+
+  ["attendanceFilterStaff","salaryFilterStaff"].forEach(id => {
+    const old = $(id).value;
+    $(id).innerHTML = filterOptions;
+    if (list.some(s => String(s.id) === old)) $(id).value = old;
+  });
+}
+
+function changeStaffPage(delta) {
+  const next = staffPage + delta;
+  if (next >= 1 && next <= staffTotalPages) loadStaff(next);
+}
+
+function resetStaffForm() {
+  $("staffForm").reset();
+  $("staffId").value = "";
+  $("staffFormTitle").textContent = "Add New Staff";
+  $("saveStaffBtn").textContent = "Save Staff";
+  $("joiningDate").value = today();
+  $("basicSalary").value = "0";
+}
+
+async function editStaff(id) {
+  try {
+    const data = await api(STAFF_API + id);
+    const s = data.staff;
+    $("staffId").value = s.id;
+    $("staffCode").value = s.staff_code;
+    $("staffName").value = s.staff_name;
+    $("designation").value = s.designation;
+    $("joiningDate").value = String(s.joining_date).slice(0,10);
+    $("basicSalary").value = s.basic_salary;
+    $("staffStatus").value = s.status;
+    $("staffFormTitle").textContent = "Edit Staff";
+    $("saveStaffBtn").textContent = "Update Staff";
+    $("staffForm").scrollIntoView({behavior:"smooth"});
+  } catch(error) {
+    showMessage(error.message, true);
+  }
+}
+
+$("staffForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  const id = $("staffId").value;
+  const payload = {
+    staff_code: $("staffCode").value.trim(),
+    staff_name: $("staffName").value.trim(),
+    designation: $("designation").value.trim(),
+    joining_date: $("joiningDate").value,
+    basic_salary: Number($("basicSalary").value),
+    status: $("staffStatus").value
+  };
+
+  try {
+    await api(id ? STAFF_API + id : STAFF_API, {
+      method: id ? "PUT" : "POST",
+      body: JSON.stringify(payload)
+    });
+    showMessage(id ? "Staff updated successfully." : "Staff added successfully.");
+    resetStaffForm();
+    await loadStaff(staffPage);
+    await loadSummary();
+  } catch(error) {
+    showMessage(error.message, true);
+  }
+});
+
+async function deleteStaff(id) {
+  if (!confirm("Are you sure you want to delete this staff member?")) return;
+  try {
+    await api(STAFF_API + id, {method:"DELETE"});
+    showMessage("Staff deleted successfully.");
+    await loadStaff(staffPage);
+    await loadSummary();
+  } catch(error) {
+    showMessage(error.message, true);
+  }
+}
+
+// Attendance
+async function loadAttendance() {
+  const params = new URLSearchParams();
+  if ($("attendanceFilterStaff").value) params.set("staff_id", $("attendanceFilterStaff").value);
+  if ($("attendanceFilterDate").value) params.set("attendance_date", $("attendanceFilterDate").value);
+
+  try {
+    const data = await api("/staff/attendance/list?" + params.toString());
+    attendanceRecords = data.attendance || [];
+    $("attendanceTable").innerHTML = attendanceRecords.length ? attendanceRecords.map(a => `
+      <tr>
+        <td>${escapeHTML(a.attendance_date)}</td>
+        <td>${escapeHTML(a.staff_code)}</td>
+        <td>${escapeHTML(a.staff_name)}</td>
+        <td>${escapeHTML(a.attendance_status)}</td>
+        <td>${escapeHTML(a.notes || "")}</td>
+      </tr>`).join("") :
+      '<tr><td colspan="5">No attendance records found.</td></tr>';
+  } catch(error) {
+    showMessage("Attendance error: " + error.message, true);
+  }
+}
+
+$("attendanceForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  const payload = {
+    staff_id: Number($("attendanceStaff").value),
+    attendance_date: $("attendanceDate").value,
+    attendance_status: $("attendanceStatus").value,
+    notes: $("attendanceNotes").value.trim() || null
+  };
+
+  try {
+    await api(ATTENDANCE_API, {method:"POST",body:JSON.stringify(payload)});
+    showMessage("Attendance saved successfully.");
+    $("attendanceNotes").value = "";
+    await loadAttendance();
+  } catch(error) {
+    showMessage(error.message, true);
+  }
+});
+
+// Salary
+function updateSalaryPreview() {
+  const basic = Number($("salaryBasic").value || 0);
+  const bonus = Number($("salaryBonus").value || 0);
+  const deductions = Number($("salaryDeductions").value || 0);
+  const paid = Number($("salaryPaid").value || 0);
+  const net = basic + bonus - deductions;
+
+  $("netSalaryPreview").textContent = money(net);
+  $("remainingSalaryPreview").textContent = money(net - paid);
+}
+
+["salaryBasic","salaryBonus","salaryDeductions","salaryPaid"].forEach(id => {
+  $(id).addEventListener("input", updateSalaryPreview);
+});
+
+$("salaryStaff").addEventListener("change", () => {
+  const selected = $("salaryStaff").value;
+  const staff = staffRecords.find(s => String(s.id) === selected);
+  if (staff) $("salaryBasic").value = staff.basic_salary;
+  updateSalaryPreview();
+});
+
+$("salaryForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const payload = {
+    staff_id: Number($("salaryStaff").value),
+    salary_month: $("salaryMonth").value,
+    basic_salary: Number($("salaryBasic").value),
+    bonus: Number($("salaryBonus").value),
+    deductions: Number($("salaryDeductions").value),
+    paid_amount: Number($("salaryPaid").value),
+    payment_date: $("salaryPaymentDate").value || null,
+    notes: $("salaryNotes").value.trim() || null
+  };
+
+  if (payload.deductions > payload.basic_salary + payload.bonus) {
+    showMessage("Deductions cannot exceed basic salary plus bonus.", true);
+    return;
+  }
+  if (payload.paid_amount > payload.basic_salary + payload.bonus - payload.deductions) {
+    showMessage("Paid amount cannot exceed net salary.", true);
+    return;
+  }
+
+  try {
+    await api(SALARY_API, {method:"POST",body:JSON.stringify(payload)});
+    showMessage("Salary saved successfully.");
+    await loadSalaries();
+    updateSalaryPreview();
+  } catch(error) {
+    showMessage(error.message, true);
+  }
+});
+
+async function loadSalaries() {
+  const params = new URLSearchParams();
+  if ($("salaryFilterStaff").value) params.set("staff_id", $("salaryFilterStaff").value);
+  if ($("salaryFilterMonth").value) params.set("salary_month", $("salaryFilterMonth").value);
+
+  try {
+    const data = await api("/staff/salary/list?" + params.toString());
+    salaryRecords = data.salaries || [];
+    $("salaryTable").innerHTML = salaryRecords.length ? salaryRecords.map(s => `
+      <tr>
+        <td>${escapeHTML(s.salary_month)}</td>
+        <td>${escapeHTML(s.staff_code)}</td>
+        <td>${escapeHTML(s.staff_name)}</td>
+        <td>${money(s.basic_salary)}</td>
+        <td>${money(s.bonus)}</td>
+        <td>${money(s.deductions)}</td>
+        <td>${money(s.net_salary)}</td>
+        <td>${money(s.paid_amount)}</td>
+        <td>${money(s.remaining_salary)}</td>
+        <td><button class="secondary" onclick="printSalaryReceipt(${s.id})">Print Receipt</button></td>
+      </tr>`).join("") :
+      '<tr><td colspan="10">No salary records found.</td></tr>';
+
+    const totalNet = salaryRecords.reduce((sum, s) => sum + Number(s.net_salary || 0), 0);
+    $("monthlySalary").textContent = money(totalNet);
+  } catch(error) {
+    showMessage("Salary error: " + error.message, true);
+  }
+}
+
+// Printing
+function printDocument(title, content) {
+  const win = window.open("", "_blank", "width=950,height=750");
+  if (!win) {
+    showMessage("Please allow pop-ups to print this document.", true);
+    return;
+  }
+
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>${escapeHTML(title)}</title>
+  <style>
+    body{font-family:Arial,sans-serif;color:#111;padding:25px}
+    h1,h2{text-align:center}
+    .meta{text-align:center;font-size:12px;color:#555;margin-bottom:20px}
+    table{width:100%;border-collapse:collapse;margin-top:15px}
+    th,td{border:1px solid #aaa;padding:8px;text-align:left;font-size:12px}
+    th{background:#eee}
+    .signatures{display:flex;justify-content:space-between;gap:25px;margin-top:80px}
+    .signature{border-top:1px solid #222;padding-top:8px;text-align:center;width:30%;font-size:12px}
+    .footer{text-align:center;margin-top:30px;font-size:11px}
+    @media print{button{display:none}body{padding:0}}
+  </style></head><body>
+  <h1>Shop Management Software</h1>
+  <h2>${escapeHTML(title)}</h2>
+  <div class="meta">Printed: ${escapeHTML(new Date().toLocaleString())}</div>
+  ${content}
+  <div class="signatures">
+    <div class="signature">Prepared By / Signature</div>
+    <div class="signature">Authorized Person / Signature</div>
+    <div class="signature">Received By / Signature</div>
+  </div>
+  <div class="footer">Computer-generated document</div>
+  <script>window.onload=function(){window.print();};<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+function printStaffReceipt(id) {
+  const s = staffRecords.find(x => Number(x.id) === Number(id));
+  if (!s) return showMessage("Staff record not found on this page.", true);
+
+  printDocument("Staff Details", `
+    <table><tbody>
+      <tr><th>Staff Code</th><td>${escapeHTML(s.staff_code)}</td></tr>
+      <tr><th>Name</th><td>${escapeHTML(s.staff_name)}</td></tr>
+      <tr><th>Designation</th><td>${escapeHTML(s.designation)}</td></tr>
+      <tr><th>Joining Date</th><td>${escapeHTML(s.joining_date)}</td></tr>
+      <tr><th>Basic Salary</th><td>${money(s.basic_salary)}</td></tr>
+      <tr><th>Status</th><td>${escapeHTML(s.status)}</td></tr>
+    </tbody></table>`);
+}
+
+function printStaffReport() {
+  const rows = staffRecords.map(s => `
+    <tr><td>${escapeHTML(s.staff_code)}</td><td>${escapeHTML(s.staff_name)}</td>
+    <td>${escapeHTML(s.designation)}</td><td>${escapeHTML(s.joining_date)}</td>
+    <td>${money(s.basic_salary)}</td><td>${escapeHTML(s.status)}</td></tr>`).join("");
+
+  printDocument("Staff Report", `
+    <table><thead><tr><th>Code</th><th>Name</th><th>Designation</th>
+    <th>Joining Date</th><th>Salary</th><th>Status</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="6">No records</td></tr>'}</tbody></table>`);
+}
+
+function printAttendanceReport() {
+  const rows = attendanceRecords.map(a => `
+    <tr><td>${escapeHTML(a.attendance_date)}</td><td>${escapeHTML(a.staff_code)}</td>
+    <td>${escapeHTML(a.staff_name)}</td><td>${escapeHTML(a.attendance_status)}</td>
+    <td>${escapeHTML(a.notes || "")}</td></tr>`).join("");
+
+  printDocument("Attendance Report", `
+    <table><thead><tr><th>Date</th><th>Code</th><th>Name</th><th>Status</th><th>Notes</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="5">No records</td></tr>'}</tbody></table>`);
+}
+
+function printSalaryReceipt(id) {
+  const s = salaryRecords.find(x => Number(x.id) === Number(id));
+  if (!s) return showMessage("Salary record not found.", true);
+
+  printDocument("Salary Payment Receipt", `
+    <table><tbody>
+      <tr><th>Staff Code</th><td>${escapeHTML(s.staff_code)}</td></tr>
+      <tr><th>Staff Name</th><td>${escapeHTML(s.staff_name)}</td></tr>
+      <tr><th>Salary Month</th><td>${escapeHTML(s.salary_month)}</td></tr>
+      <tr><th>Basic Salary</th><td>${money(s.basic_salary)}</td></tr>
+      <tr><th>Bonus</th><td>${money(s.bonus)}</td></tr>
+      <tr><th>Deductions</th><td>${money(s.deductions)}</td></tr>
+      <tr><th>Net Salary</th><td>${money(s.net_salary)}</td></tr>
+      <tr><th>Paid Amount</th><td>${money(s.paid_amount)}</td></tr>
+      <tr><th>Remaining Salary</th><td>${money(s.remaining_salary)}</td></tr>
+      <tr><th>Payment Date</th><td>${escapeHTML(s.payment_date || "Not specified")}</td></tr>
+      <tr><th>Notes</th><td>${escapeHTML(s.notes || "")}</td></tr>
+    </tbody></table>`);
+}
+
+function printSalaryReport() {
+  const rows = salaryRecords.map(s => `
+    <tr><td>${escapeHTML(s.salary_month)}</td><td>${escapeHTML(s.staff_code)}</td>
+    <td>${escapeHTML(s.staff_name)}</td><td>${money(s.net_salary)}</td>
+    <td>${money(s.paid_amount)}</td><td>${money(s.remaining_salary)}</td></tr>`).join("");
+
+  printDocument("Salary Report", `
+    <table><thead><tr><th>Month</th><th>Code</th><th>Name</th>
+    <th>Net Salary</th><th>Paid</th><th>Remaining</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="6">No records</td></tr>'}</tbody></table>`);
+}
+
+// Initial page setup
+$("joiningDate").value = today();
+$("attendanceDate").value = today();
+$("salaryMonth").value = currentMonth();
+$("salaryPaymentDate").value = today();
+
+loadSummary();
+loadStaff(1).then(() => {
+  loadAttendance();
+  loadSalaries();
+});
+updateSalaryPreview();
+</script>
+</body>
+</html>

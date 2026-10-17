@@ -1,0 +1,359 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Business Reports - Shop Management Software</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f1f5f9;color:#1e293b}
+header{background:#0f172a;color:white;padding:20px 25px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{margin:0;font-size:24px}
+header p{margin:7px 0 0;color:#cbd5e1;font-size:13px}
+.container{max-width:1400px;margin:auto;padding:22px}
+.panel{background:white;padding:20px;border-radius:10px;margin-bottom:20px;box-shadow:0 2px 8px #00000008}
+.filters,.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.field{flex:1;min-width:160px}
+label{display:block;font-size:13px;font-weight:bold;margin-bottom:6px}
+input,select{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px;background:white}
+button,a.btn{border:0;border-radius:6px;padding:10px 14px;cursor:pointer;font-size:13px;text-decoration:none;display:inline-block}
+.primary{background:#2563eb;color:white}
+.secondary{background:#475569;color:white}
+.success{background:#16a34a;color:white}
+button:hover,a.btn:hover{opacity:.88}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.tab{background:#e2e8f0;color:#334155}
+.tab.active{background:#2563eb;color:white}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:15px;margin-bottom:20px}
+.card{background:white;border-radius:10px;padding:18px;box-shadow:0 2px 8px #00000008}
+.card small{color:#64748b}
+.card h2{margin:10px 0 0;font-size:25px;overflow-wrap:anywhere}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:650px}
+th,td{padding:12px 10px;border-bottom:1px solid #e2e8f0;text-align:left;font-size:13px}
+th{background:#f8fafc}
+.hidden{display:none!important}
+.message{padding:12px;border-radius:6px;margin-bottom:15px;display:none;white-space:pre-wrap}
+.message.error{display:block;background:#fee2e2;color:#991b1b}
+.message.ok{display:block;background:#dcfce7;color:#166534}
+.muted{color:#64748b;font-size:13px}
+@media(max-width:600px){.container{padding:12px}.panel{padding:14px}header{padding:16px}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>📈 Business Reports</h1>
+    <p>Sales, purchases, stock and business summaries</p>
+  </div>
+  <a class="btn secondary" href="/frontend/dashboard.html">← Dashboard</a>
+</header>
+
+<main class="container">
+  <div id="message" class="message"></div>
+
+  <section class="panel">
+    <h2>Report Filters</h2>
+    <div class="filters">
+      <div class="field">
+        <label for="startDate">Start Date</label>
+        <input type="date" id="startDate">
+      </div>
+      <div class="field">
+        <label for="endDate">End Date</label>
+        <input type="date" id="endDate">
+      </div>
+      <div class="field">
+        <label for="stockSearch">Stock Search</label>
+        <input id="stockSearch" placeholder="Product name or code">
+      </div>
+      <div class="actions">
+        <button class="primary" onclick="loadReport()">Generate Report</button>
+        <button class="secondary" onclick="resetFilters()">Reset</button>
+        <button class="success" onclick="printCurrentReport()">Print Report</button>
+      </div>
+    </div>
+    <p class="muted">Sales and purchase reports use the selected dates. Stock report shows current inventory.</p>
+  </section>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="overview">Overview</button>
+    <button class="tab" data-tab="sales">Sales Report</button>
+    <button class="tab" data-tab="purchases">Purchase Report</button>
+    <button class="tab" data-tab="stock">Stock Report</button>
+  </nav>
+
+  <section id="overview">
+    <div class="cards">
+      <div class="card"><small>Total Sales</small><h2 id="totalSales">Rs. 0</h2></div>
+      <div class="card"><small>Total Purchases</small><h2 id="totalPurchases">Rs. 0</h2></div>
+      <div class="card"><small>Products in Inventory</small><h2 id="totalProducts">0</h2></div>
+      <div class="card"><small>Low Stock Products</small><h2 id="lowStock">0</h2></div>
+    </div>
+    <div class="panel">
+      <h2>Business Summary</h2>
+      <div id="overviewDetails" class="muted">Generate a report to view summary.</div>
+    </div>
+  </section>
+
+  <section id="sales" class="panel hidden">
+    <h2>Sales Report</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Sale ID</th><th>Date</th><th>Customer</th><th>Total</th><th>Paid</th><th>Due</th><th>Status</th></tr></thead>
+        <tbody id="salesTable"><tr><td colspan="7">Generate report to load data.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="purchases" class="panel hidden">
+    <h2>Purchase Report</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Purchase ID</th><th>Date</th><th>Supplier</th><th>Total</th><th>Paid</th><th>Due</th><th>Status</th></tr></thead>
+        <tbody id="purchasesTable"><tr><td colspan="7">Generate report to load data.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="stock" class="panel hidden">
+    <h2>Current Stock Report</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Product ID</th><th>Product</th><th>Code</th><th>Stock</th><th>Purchase Price</th><th>Selling Price</th><th>Stock Value</th><th>Status</th></tr></thead>
+        <tbody id="stockTable"><tr><td colspan="8">Generate report to load data.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+let currentTab = "overview";
+let reportData = {sales:[], purchases:[], stock:[]};
+
+const money = value => "Rs. " + Number(value || 0).toLocaleString("en-PK", {
+  minimumFractionDigits:2, maximumFractionDigits:2
+});
+const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}[ch]));
+
+function message(text, error=false) {
+  $("message").textContent = text;
+  $("message").className = "message " + (error ? "error" : "ok");
+  window.scrollTo({top:0,behavior:"smooth"});
+  setTimeout(() => $("message").className="message",5000);
+}
+
+async function api(url) {
+  const response = await fetch(url);
+  const text = await response.text();
+  let data;
+  try { data = text ? JSON.parse(text) : {}; }
+  catch { data = {detail:text}; }
+  if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
+  return data;
+}
+
+function getRows(data, keys) {
+  if (Array.isArray(data)) return data;
+  for (const key of keys) {
+    if (Array.isArray(data?.[key])) return data[key];
+  }
+  return [];
+}
+
+function getDate(row) {
+  return row.sale_date || row.purchase_date || row.created_at || row.date || "";
+}
+
+function inDateRange(row) {
+  const value = String(getDate(row)).slice(0,10);
+  if (!value) return true;
+  if ($("startDate").value && value < $("startDate").value) return false;
+  if ($("endDate").value && value > $("endDate").value) return false;
+  return true;
+}
+
+function normalizeSale(row) {
+  return {
+    id: row.id ?? row.sale_id ?? "",
+    date: getDate(row),
+    customer: row.customer_name || row.customer || "Walk-in Customer",
+    total: Number(row.total_amount ?? row.total ?? row.grand_total ?? 0),
+    paid: Number(row.paid_amount ?? row.paid ?? 0),
+    due: Number(row.due_amount ?? row.due ?? 0),
+    status: row.status || ""
+  };
+}
+
+function normalizePurchase(row) {
+  return {
+    id: row.id ?? row.purchase_id ?? "",
+    date: getDate(row),
+    supplier: row.supplier_name || row.supplier || "",
+    total: Number(row.total_amount ?? row.total ?? row.grand_total ?? 0),
+    paid: Number(row.paid_amount ?? row.paid ?? 0),
+    due: Number(row.due_amount ?? row.due ?? 0),
+    status: row.status || ""
+  };
+}
+
+function normalizeProduct(row) {
+  const stock = Number(row.stock_quantity ?? row.stock ?? row.quantity ?? 0);
+  const purchase = Number(row.purchase_price ?? 0);
+  const selling = Number(row.final_price ?? row.selling_price ?? row.price ?? 0);
+  return {
+    id: row.id ?? "",
+    name: row.product_name || row.name || "",
+    code: row.product_code || row.code || row.barcode || "",
+    stock, purchase, selling,
+    value: stock * purchase,
+    min: Number(row.min_stock ?? row.minimum_stock ?? 0)
+  };
+}
+
+async function loadReport() {
+  if ($("startDate").value && $("endDate").value &&
+      $("startDate").value > $("endDate").value) {
+    message("Start date cannot be later than end date.",true);
+    return;
+  }
+
+  try {
+    const results = await Promise.allSettled([
+      api("/sales/"),
+      api("/purchases/"),
+      api("/products/")
+    ]);
+
+    const errors = [];
+    if (results[0].status === "fulfilled") {
+      reportData.sales = getRows(results[0].value,["sales","items","data"])
+        .map(normalizeSale).filter(inDateRange);
+    } else {
+      reportData.sales = [];
+      errors.push("Sales: " + results[0].reason.message);
+    }
+
+    if (results[1].status === "fulfilled") {
+      reportData.purchases = getRows(results[1].value,["purchases","items","data"])
+        .map(normalizePurchase).filter(inDateRange);
+    } else {
+      reportData.purchases = [];
+      errors.push("Purchases: " + results[1].reason.message);
+    }
+
+    if (results[2].status === "fulfilled") {
+      const products = getRows(results[2].value,["products","items","data"])
+        .map(normalizeProduct);
+      const search = $("stockSearch").value.trim().toLowerCase();
+      reportData.stock = products.filter(p =>
+        !search || p.name.toLowerCase().includes(search) ||
+        String(p.code).toLowerCase().includes(search)
+      );
+    } else {
+      reportData.stock = [];
+      errors.push("Products: " + results[2].reason.message);
+    }
+
+    renderReports();
+
+    if (errors.length) {
+      message("Some reports could not load:\n" + errors.join("\n") +
+        "\nPlease check the actual API routes and response format.",true);
+    } else {
+      message("Reports generated successfully.");
+    }
+  } catch(error) {
+    message(error.message,true);
+  }
+}
+
+function renderReports() {
+  const sales = reportData.sales;
+  const purchases = reportData.purchases;
+  const stock = reportData.stock;
+
+  const sum = (list,key) => list.reduce((total,row) => total + Number(row[key] || 0),0);
+  $("totalSales").textContent = money(sum(sales,"total"));
+  $("totalPurchases").textContent = money(sum(purchases,"total"));
+  $("totalProducts").textContent = stock.length;
+  $("lowStock").textContent = stock.filter(p => p.stock <= p.min).length;
+
+  $("overviewDetails").innerHTML = `
+    <p>Sales records: <strong>${sales.length}</strong></p>
+    <p>Purchase records: <strong>${purchases.length}</strong></p>
+    <p>Stock units: <strong>${stock.reduce((n,p)=>n+p.stock,0).toLocaleString()}</strong></p>
+    <p>Inventory purchase value: <strong>${money(sum(stock,"value"))}</strong></p>
+    <p>Sales outstanding: <strong>${money(sum(sales,"due"))}</strong></p>
+    <p>Purchase outstanding: <strong>${money(sum(purchases,"due"))}</strong></p>
+    <p class="muted">Sales and purchase totals are based on the records returned by their APIs.</p>`;
+
+  $("salesTable").innerHTML = sales.length ? sales.map(s => `
+    <tr><td>${esc(s.id)}</td><td>${esc(s.date)}</td><td>${esc(s.customer)}</td>
+    <td>${money(s.total)}</td><td>${money(s.paid)}</td><td>${money(s.due)}</td>
+    <td>${esc(s.status)}</td></tr>`).join("") :
+    '<tr><td colspan="7">No sales records found for this date range.</td></tr>';
+
+  $("purchasesTable").innerHTML = purchases.length ? purchases.map(p => `
+    <tr><td>${esc(p.id)}</td><td>${esc(p.date)}</td><td>${esc(p.supplier)}</td>
+    <td>${money(p.total)}</td><td>${money(p.paid)}</td><td>${money(p.due)}</td>
+    <td>${esc(p.status)}</td></tr>`).join("") :
+    '<tr><td colspan="7">No purchase records found for this date range.</td></tr>';
+
+  $("stockTable").innerHTML = stock.length ? stock.map(p => `
+    <tr><td>${esc(p.id)}</td><td>${esc(p.name)}</td><td>${esc(p.code)}</td>
+    <td>${p.stock}</td><td>${money(p.purchase)}</td><td>${money(p.selling)}</td>
+    <td>${money(p.value)}</td><td>${p.stock <= p.min ? "Low Stock" : "In Stock"}</td></tr>`).join("") :
+    '<tr><td colspan="8">No products found.</td></tr>';
+}
+
+function switchTab(id) {
+  currentTab = id;
+  ["overview","sales","purchases","stock"].forEach(key => $(key).classList.toggle("hidden",key!==id));
+  document.querySelectorAll(".tab").forEach(btn => btn.classList.toggle("active",btn.dataset.tab===id));
+}
+document.querySelectorAll(".tab").forEach(btn => btn.addEventListener("click",()=>switchTab(btn.dataset.tab)));
+
+function resetFilters() {
+  $("startDate").value = "";
+  $("endDate").value = "";
+  $("stockSearch").value = "";
+  loadReport();
+}
+
+function printCurrentReport() {
+  const section = $(currentTab);
+  const win = window.open("","_blank","width=1000,height=750");
+  if (!win) return message("Please allow pop-ups to print.",true);
+
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <title>Business Report</title>
+    <style>
+      body{font-family:Arial;padding:20px;color:#111}
+      h1,h2{text-align:center}
+      .meta{text-align:center;font-size:12px;margin-bottom:20px}
+      table{width:100%;border-collapse:collapse}
+      th,td{border:1px solid #aaa;padding:7px;text-align:left;font-size:11px}
+      th{background:#eee}
+      .sign{display:flex;justify-content:space-between;margin-top:80px;gap:20px}
+      .sign span{width:30%;border-top:1px solid #111;text-align:center;padding-top:8px;font-size:12px}
+    </style></head><body>
+    <h1>Shop Management Software</h1>
+    <h2>${esc(section.querySelector("h2")?.textContent || "Business Report")}</h2>
+    <div class="meta">Printed: ${esc(new Date().toLocaleString())}</div>
+    ${section.innerHTML}
+    <div class="sign"><span>Prepared By / Signature</span>
+    <span>Authorized Person / Signature</span><span>Checked By / Signature</span></div>
+    <script>window.onload=()=>window.print();<\/script>
+    </body></html>`);
+  win.document.close();
+}
+
+loadReport();
+</script>
+</body>
+</html>

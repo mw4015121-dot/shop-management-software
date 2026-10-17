@@ -1,0 +1,982 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop Management - Purchases</title>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f1f5f9;color:#1e293b}
+header{background:#0f172a;color:white;padding:20px}
+header h1{margin:0 0 6px;font-size:25px}
+header p{margin:0;color:#cbd5e1}
+.container{max-width:1400px;margin:22px auto;padding:0 16px}
+.card{background:white;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 2px 8px #0000000b}
+h2{font-size:19px;margin:0 0 18px}
+.form-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+label{display:block;font-size:13px;font-weight:bold;margin-bottom:7px}
+input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:7px;font-size:14px;background:white}
+button{border:0;border-radius:7px;padding:10px 14px;cursor:pointer;font-weight:bold;margin:3px}
+button:disabled{opacity:.6;cursor:not-allowed}
+.primary{background:#2563eb;color:white}
+.success{background:#16a34a;color:white}
+.danger{background:#dc2626;color:white}
+.secondary{background:#e2e8f0;color:#1e293b}
+.print-btn{background:#7c3aed;color:white}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:750px}
+th,td{padding:11px 9px;border-bottom:1px solid #e2e8f0;text-align:left;font-size:13px}
+th{background:#f8fafc}
+.item-input{min-width:100px}
+.totals{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:20px}
+.total-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px}
+.total-box span{display:block;font-size:12px;color:#64748b;margin-bottom:8px}
+.total-box strong{font-size:20px}
+.actions{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;margin-top:20px}
+.message{padding:12px;border-radius:7px;margin-bottom:15px;display:none;white-space:pre-wrap}
+.ok{background:#dcfce7;color:#166534}
+.err{background:#fee2e2;color:#991b1b}
+.status{padding:5px 8px;border-radius:5px;background:#e2e8f0;display:inline-block}
+.small{font-size:12px;color:#64748b}
+
+@media(max-width:850px){
+.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.totals{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:500px){
+.form-grid,.totals{grid-template-columns:1fr}
+.card{padding:14px}
+header h1{font-size:21px}
+}
+
+@media print{
+.no-print{display:none!important}
+}
+</style>
+</head>
+
+<body>
+
+<header class="no-print">
+  <h1>Shop Management System</h1>
+  <p>Purchase Management</p>
+</header>
+
+<div class="container">
+<div id="message" class="message no-print"></div>
+
+<section class="card no-print">
+<h2 id="formTitle">Create New Purchase</h2>
+
+<div class="form-grid">
+<div>
+<label>Purchase Code *</label>
+<input id="purchaseCode" placeholder="PUR-2026-001">
+</div>
+
+<div>
+<label>Supplier *</label>
+<select id="supplier">
+<option value="">Loading suppliers...</option>
+</select>
+</div>
+
+<div>
+<label>Supplier Invoice Number</label>
+<input id="invoiceNo" placeholder="Invoice number">
+</div>
+
+<div>
+<label>Purchase Date *</label>
+<input id="purchaseDate" type="date">
+</div>
+
+<div>
+<label>Payment Method</label>
+<select id="paymentMethod">
+<option value="cash">Cash</option>
+<option value="bank">Bank</option>
+<option value="easypaisa">EasyPaisa</option>
+<option value="jazzcash">JazzCash</option>
+<option value="other">Other</option>
+</select>
+</div>
+
+<div>
+<label>Extra Charges (Rs)</label>
+<input id="extraCharges" type="number" min="0" step="0.01" value="0">
+</div>
+
+<div>
+<label>Paid Amount (Rs)</label>
+<input id="paidAmount" type="number" min="0" step="0.01" value="0">
+</div>
+
+<div>
+<label>Notes</label>
+<input id="notes" placeholder="Optional notes">
+</div>
+</div>
+</section>
+
+<section class="card no-print">
+<h2>Purchase Products</h2>
+
+<div class="actions" style="margin-top:0;margin-bottom:12px">
+<span class="small">Add products received from the supplier.</span>
+<button class="primary" onclick="addItem()">+ Add Product</button>
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Product</th>
+<th>Quantity</th>
+<th>Purchase Price</th>
+<th>Discount</th>
+<th>Tax</th>
+<th>Line Total</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="itemsBody"></tbody>
+</table>
+</div>
+
+<div class="totals">
+<div class="total-box"><span>Subtotal</span><strong id="subtotal">Rs 0.00</strong></div>
+<div class="total-box"><span>Discount</span><strong id="discountTotal">Rs 0.00</strong></div>
+<div class="total-box"><span>Tax</span><strong id="taxTotal">Rs 0.00</strong></div>
+<div class="total-box"><span>Grand Total</span><strong id="grandTotal">Rs 0.00</strong></div>
+<div class="total-box"><span>Paid Amount</span><strong id="paidDisplay">Rs 0.00</strong></div>
+<div class="total-box"><span>Remaining Due</span><strong id="dueTotal">Rs 0.00</strong></div>
+</div>
+
+<div class="actions">
+<button class="secondary" onclick="resetForm()">Clear Form</button>
+<button class="success" id="saveButton" onclick="savePurchase()">Save Purchase</button>
+</div>
+</section>
+
+<section class="card no-print">
+<h2>Purchase History</h2>
+
+<div class="form-grid" style="margin-bottom:16px">
+<div>
+<label>Search</label>
+<input id="searchInput" placeholder="Purchase code or supplier">
+</div>
+
+<div>
+<label>Payment Status</label>
+<select id="filterPayment">
+<option value="">All</option>
+<option value="paid">Paid</option>
+<option value="partial">Partial</option>
+<option value="unpaid">Unpaid</option>
+</select>
+</div>
+
+<div>
+<label>Page Size</label>
+<select id="pageLimit">
+<option value="10">10</option>
+<option value="20">20</option>
+<option value="50">50</option>
+</select>
+</div>
+
+<div style="display:flex;align-items:end;gap:5px">
+<button class="primary" onclick="loadPurchases(1)">Search</button>
+<button class="secondary" onclick="clearSearch()">Clear</button>
+</div>
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Purchase Code</th>
+<th>Supplier</th>
+<th>Date</th>
+<th>Total</th>
+<th>Paid</th>
+<th>Due</th>
+<th>Payment</th>
+<th>Status</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody id="historyBody">
+<tr><td colspan="10">Loading purchases...</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="actions">
+<span id="pageInfo" class="small">Page 1</span>
+<div>
+<button class="secondary" onclick="changePage(-1)">Previous</button>
+<button class="secondary" onclick="changePage(1)">Next</button>
+</div>
+</div>
+</section>
+
+<section class="card no-print" id="detailCard" style="display:none">
+<h2>Purchase Details</h2>
+<div id="detailContent"></div>
+<button class="secondary" onclick="$('detailCard').style.display='none'">Close Details</button>
+</section>
+</div>
+
+<script>
+const API = window.location.protocol === "file:"
+  ? "http://127.0.0.1:8000"
+  : window.location.origin;
+
+let products = [];
+let purchasesPage = 1;
+let totalPages = 1;
+let editingPurchaseId = null;
+let currentReceiptPurchase = null;
+let busy = false;
+
+const $ = id => document.getElementById(id);
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#39;"
+  })[c]);
+}
+
+function number(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function money(value) {
+  return "Rs " + number(value).toLocaleString("en-PK", {
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  });
+}
+
+function showMessage(text, type="ok") {
+  const el = $("message");
+  el.textContent = text;
+  el.className = "message no-print " + (type === "err" ? "err" : "ok");
+  el.style.display = "block";
+  el.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function hideMessage() {
+  $("message").style.display = "none";
+}
+
+async function api(path, options={}) {
+  const response = await fetch(API + path, {
+    ...options,
+    headers:{
+      ...(options.body ? {"Content-Type":"application/json"} : {}),
+      ...(options.headers || {})
+    }
+  });
+
+  const text = await response.text();
+  let data;
+
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = {detail:text};
+  }
+
+  if (!response.ok) {
+    const detail = data.detail;
+    throw new Error(
+      typeof detail === "string"
+        ? detail
+        : detail ? JSON.stringify(detail) : "Request failed: " + response.status
+    );
+  }
+
+  return data;
+}
+
+function today() {
+  const d = new Date();
+  const local = new Date(d.getTime() - d.getTimezoneOffset()*60000);
+  return local.toISOString().slice(0,10);
+}
+
+function newPurchaseCode() {
+  const d = new Date();
+  const stamp = [
+    d.getFullYear(),
+    String(d.getMonth()+1).padStart(2,"0"),
+    String(d.getDate()).padStart(2,"0"),
+    String(d.getHours()).padStart(2,"0"),
+    String(d.getMinutes()).padStart(2,"0"),
+    String(d.getSeconds()).padStart(2,"0")
+  ].join("");
+  return "PUR-" + stamp;
+}
+
+async function loadSuppliers() {
+  const select = $("supplier");
+
+  try {
+    const result = await api("/suppliers/");
+    const list = Array.isArray(result)
+      ? result
+      : result.data || result.suppliers || [];
+
+    select.innerHTML = '<option value="">Select Supplier</option>';
+
+    list.forEach(s => {
+      if (s.status && String(s.status).toLowerCase() !== "active") return;
+
+      select.add(new Option(
+        (s.supplier_name || s.name || "Supplier") +
+        (s.supplier_code ? " (" + s.supplier_code + ")" : ""),
+        s.id
+      ));
+    });
+
+    if (!select.options.length || select.options.length === 1) {
+      select.innerHTML = '<option value="">No suppliers found</option>';
+    }
+  } catch(error) {
+    select.innerHTML = '<option value="">Could not load suppliers</option>';
+    showMessage("Supplier list load nahi hui:\n" + error.message, "err");
+  }
+}
+
+async function loadProducts() {
+  try {
+    const result = await api("/products/");
+    products = Array.isArray(result)
+      ? result
+      : result.data || result.products || [];
+
+    products = products.filter(p =>
+      !p.status || String(p.status).toLowerCase() === "active"
+    );
+
+    document.querySelectorAll(".product-select").forEach(select => {
+      const oldValue = select.value;
+      fillProductSelect(select);
+      if (products.some(p => String(p.id) === oldValue)) {
+        select.value = oldValue;
+      }
+    });
+  } catch(error) {
+    showMessage("Product list load nahi hui:\n" + error.message, "err");
+  }
+}
+
+function fillProductSelect(select) {
+  select.innerHTML = '<option value="">Select Product</option>';
+
+  products.forEach(p => {
+    const name = p.product_name || p.name || ("Product #" + p.id);
+    const code = p.product_code || p.barcode || "";
+    select.add(new Option(name + (code ? " (" + code + ")" : ""), p.id));
+  });
+}
+
+function addItem(data={}) {
+  const tr = document.createElement("tr");
+
+  tr.innerHTML = `
+    <td><select class="product-select item-input"><option value="">Select Product</option></select></td>
+    <td><input class="qty item-input" type="number" min="0.001" step="0.001" value="${escapeHtml(data.quantity ?? 1)}"></td>
+    <td><input class="price item-input" type="number" min="0" step="0.01" value="${escapeHtml(data.purchase_price ?? 0)}"></td>
+    <td><input class="discount item-input" type="number" min="0" step="0.01" value="${escapeHtml(data.discount_amount ?? 0)}"></td>
+    <td><input class="tax item-input" type="number" min="0" step="0.01" value="${escapeHtml(data.tax_amount ?? 0)}"></td>
+    <td class="line-total">Rs 0.00</td>
+    <td><button class="danger" type="button">Remove</button></td>
+  `;
+
+  fillProductSelect(tr.querySelector(".product-select"));
+
+  if (data.product_id) {
+    tr.querySelector(".product-select").value = String(data.product_id);
+  }
+
+  tr.querySelector(".product-select").addEventListener("change", e => {
+    const product = products.find(p => String(p.id) === e.target.value);
+    if (product) {
+      tr.querySelector(".price").value =
+        product.purchase_price ?? product.original_price ?? 0;
+    }
+    calculateTotals();
+  });
+
+  tr.querySelectorAll("input").forEach(input =>
+    input.addEventListener("input", calculateTotals)
+  );
+
+  tr.querySelector("button").addEventListener("click", () => {
+    tr.remove();
+    calculateTotals();
+  });
+
+  $("itemsBody").appendChild(tr);
+  calculateTotals();
+}
+
+function getItems() {
+  return [...$("itemsBody").querySelectorAll("tr")].map(row => ({
+    product_id:Number(row.querySelector(".product-select").value),
+    quantity:number(row.querySelector(".qty").value),
+    purchase_price:number(row.querySelector(".price").value),
+    discount_amount:number(row.querySelector(".discount").value),
+    tax_amount:number(row.querySelector(".tax").value)
+  }));
+}
+
+function calculateTotals() {
+  let subtotal = 0, discount = 0, tax = 0;
+
+  $("itemsBody").querySelectorAll("tr").forEach(row => {
+    const qty = number(row.querySelector(".qty").value);
+    const price = number(row.querySelector(".price").value);
+    const disc = number(row.querySelector(".discount").value);
+    const tx = number(row.querySelector(".tax").value);
+    const line = qty * price - disc + tx;
+
+    row.querySelector(".line-total").textContent = money(line);
+    subtotal += qty * price;
+    discount += disc;
+    tax += tx;
+  });
+
+  const extra = number($("extraCharges").value);
+  const paid = number($("paidAmount").value);
+  const grand = subtotal - discount + tax + extra;
+
+  $("subtotal").textContent = money(subtotal);
+  $("discountTotal").textContent = money(discount);
+  $("taxTotal").textContent = money(tax);
+  $("grandTotal").textContent = money(grand);
+  $("paidDisplay").textContent = money(paid);
+  $("dueTotal").textContent = money(grand - paid);
+}
+
+async function savePurchase() {
+  if (busy) return;
+  hideMessage();
+
+  const items = getItems();
+
+  if (!$("purchaseCode").value.trim()) {
+    showMessage("Purchase Code zaroor likhein.", "err");
+    return;
+  }
+
+  if (!$("supplier").value) {
+    showMessage("Supplier select karein.", "err");
+    return;
+  }
+
+  if (!$("purchaseDate").value) {
+    showMessage("Purchase Date select karein.", "err");
+    return;
+  }
+
+  if (!items.length || items.some(i =>
+    !i.product_id || i.quantity <= 0 ||
+    i.purchase_price < 0 || i.discount_amount < 0 || i.tax_amount < 0
+  )) {
+    showMessage("Har product ki selection aur quantity/price check karein.", "err");
+    return;
+  }
+
+  const subtotal = items.reduce((sum,i) => sum + i.quantity*i.purchase_price,0);
+  const discounts = items.reduce((sum,i) => sum + i.discount_amount,0);
+  const taxes = items.reduce((sum,i) => sum + i.tax_amount,0);
+  const extra = number($("extraCharges").value);
+  const total = subtotal - discounts + taxes + extra;
+  const paid = number($("paidAmount").value);
+
+  if (discounts > subtotal) {
+    showMessage("Discount total, subtotal se zyada nahi ho sakta.", "err");
+    return;
+  }
+
+  if (extra < 0 || total < 0 || paid < 0 || paid > total) {
+    showMessage("Extra charges, paid amount aur grand total check karein.", "err");
+    return;
+  }
+
+  const payload = {
+    purchase_code:$("purchaseCode").value.trim(),
+    supplier_id:Number($("supplier").value),
+    supplier_invoice_no:$("invoiceNo").value.trim() || null,
+    purchase_date:$("purchaseDate").value,
+    items,
+    paid_amount:paid,
+    payment_method:$("paymentMethod").value,
+    extra_charges:extra,
+    notes:$("notes").value.trim() || null
+  };
+
+  busy = true;
+  $("saveButton").disabled = true;
+  $("saveButton").textContent = "Saving...";
+
+  try {
+    let result;
+
+    if (editingPurchaseId) {
+      result = await api("/purchases/" + editingPurchaseId, {
+        method:"PUT",
+        body:JSON.stringify(payload)
+      });
+    } else {
+      result = await api("/purchases/", {
+        method:"POST",
+        body:JSON.stringify(payload)
+      });
+    }
+
+    showMessage(result.message || "Purchase saved successfully.");
+    resetForm(false);
+    await loadPurchases(1);
+    await loadProducts();
+  } catch(error) {
+    showMessage("Purchase save nahi hui:\n" + error.message, "err");
+  } finally {
+    busy = false;
+    $("saveButton").disabled = false;
+    $("saveButton").textContent = "Save Purchase";
+  }
+}
+
+function resetForm(show=true) {
+  editingPurchaseId = null;
+  $("formTitle").textContent = "Create New Purchase";
+  $("saveButton").textContent = "Save Purchase";
+  $("purchaseCode").value = newPurchaseCode();
+  $("supplier").value = "";
+  $("invoiceNo").value = "";
+  $("purchaseDate").value = today();
+  $("paymentMethod").value = "cash";
+  $("extraCharges").value = "0";
+  $("paidAmount").value = "0";
+  $("notes").value = "";
+  $("itemsBody").innerHTML = "";
+  addItem();
+  calculateTotals();
+
+  if (show) showMessage("Form cleared.");
+}
+
+async function loadPurchases(page=1) {
+  purchasesPage = page;
+
+  const params = new URLSearchParams({
+    page:String(page),
+    limit:$("pageLimit").value
+  });
+
+  const search = $("searchInput").value.trim();
+  const payment = $("filterPayment").value;
+
+  if (search) params.set("search", search);
+  if (payment) params.set("payment_status", payment);
+
+  $("historyBody").innerHTML = '<tr><td colspan="10">Loading...</td></tr>';
+
+  try {
+    const result = await api("/purchases/?" + params.toString());
+    const rows = Array.isArray(result)
+      ? result
+      : result.data || result.purchases || [];
+
+    totalPages = number(result.total_pages) || 1;
+
+    if (!rows.length) {
+      $("historyBody").innerHTML =
+        '<tr><td colspan="10">No purchases found.</td></tr>';
+    } else {
+      $("historyBody").innerHTML = rows.map(p => `
+        <tr>
+          <td>${escapeHtml(p.id)}</td>
+          <td>${escapeHtml(p.purchase_code)}</td>
+          <td>${escapeHtml(p.supplier_name || p.supplier_id || "-")}</td>
+          <td>${escapeHtml(p.purchase_date || "-")}</td>
+          <td>${money(p.total_amount)}</td>
+          <td>${money(p.paid_amount)}</td>
+          <td>${money(p.due_amount)}</td>
+          <td><span class="status">${escapeHtml(p.payment_status || "-")}</span></td>
+          <td><span class="status">${escapeHtml(p.status || "-")}</span></td>
+          <td>
+            <button class="primary" onclick="viewPurchase(${Number(p.id)})">View</button>
+            <button class="print-btn" onclick="printPurchaseById(${Number(p.id)})">Print</button>
+            <button class="secondary" onclick="editPurchase(${Number(p.id)})">Edit</button>
+            <button class="danger" onclick="cancelPurchase(${Number(p.id)})">Cancel</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    $("pageInfo").textContent =
+      `Page ${purchasesPage} of ${totalPages} | Total: ${result.total ?? rows.length}`;
+  } catch(error) {
+    $("historyBody").innerHTML =
+      '<tr><td colspan="10">Could not load purchases.</td></tr>';
+    showMessage("Purchase history load nahi hui:\n" + error.message, "err");
+  }
+}
+
+function changePage(direction) {
+  const next = purchasesPage + direction;
+  if (next >= 1 && next <= totalPages) loadPurchases(next);
+}
+
+function clearSearch() {
+  $("searchInput").value = "";
+  $("filterPayment").value = "";
+  loadPurchases(1);
+}
+
+async function viewPurchase(id) {
+  try {
+    const result = await api("/purchases/" + id);
+    const p = result.data || result;
+    currentReceiptPurchase = p;
+
+    $("detailContent").innerHTML = `
+      <p><b>Purchase Code:</b> ${escapeHtml(p.purchase_code)}</p>
+      <p><b>Supplier:</b> ${escapeHtml(p.supplier_name || p.supplier_id || "-")}</p>
+      <p><b>Date:</b> ${escapeHtml(p.purchase_date || "-")}</p>
+      <p><b>Invoice:</b> ${escapeHtml(p.supplier_invoice_no || "-")}</p>
+      <p><b>Payment Method:</b> ${escapeHtml(p.payment_method || "-")}</p>
+      <p><b>Payment Status:</b> ${escapeHtml(p.payment_status || "-")}</p>
+      <p><b>Total:</b> ${money(p.total_amount)}</p>
+      <p><b>Paid:</b> ${money(p.paid_amount)}</p>
+      <p><b>Due:</b> ${money(p.due_amount)}</p>
+      <p><b>Notes:</b> ${escapeHtml(p.notes || "-")}</p>
+      <div class="actions" style="justify-content:flex-start">
+        <button class="print-btn" onclick="printPurchaseReceipt()">Print Purchase Receipt</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Product</th><th>Qty</th><th>Price</th><th>Discount</th><th>Tax</th><th>Total</th></tr>
+          </thead>
+          <tbody>
+            ${(p.items || []).map(i => `
+              <tr>
+                <td>${escapeHtml(i.product_name || i.product_id)}</td>
+                <td>${escapeHtml(i.quantity)}</td>
+                <td>${money(i.purchase_price)}</td>
+                <td>${money(i.discount_amount)}</td>
+                <td>${money(i.tax_amount)}</td>
+                <td>${money(i.total_amount != null ? i.total_amount :
+                  number(i.quantity)*number(i.purchase_price)-number(i.discount_amount)+number(i.tax_amount))}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    $("detailCard").style.display = "block";
+    $("detailCard").scrollIntoView({behavior:"smooth"});
+  } catch(error) {
+    showMessage("Purchase details load nahi huin:\n" + error.message, "err");
+  }
+}
+
+/* Purchase History ka direct Print button */
+async function printPurchaseById(id) {
+  try {
+    const result = await api("/purchases/" + id);
+    currentReceiptPurchase = result.data || result;
+    printPurchaseReceipt();
+  } catch(error) {
+    showMessage("Receipt load nahi hui:\n" + error.message, "err");
+  }
+}
+
+function printPurchaseReceipt() {
+  const p = currentReceiptPurchase;
+
+  if (!p) {
+    showMessage("Purchase details available nahi hain.", "err");
+    return;
+  }
+
+  const items = Array.isArray(p.items) ? p.items : [];
+
+  const subtotal = number(
+    p.subtotal_amount ?? p.subtotal ??
+    items.reduce((sum,i) => sum + number(i.quantity)*number(i.purchase_price),0)
+  );
+
+  const discount = number(
+    p.discount_amount ?? p.total_discount ??
+    items.reduce((sum,i) => sum + number(i.discount_amount),0)
+  );
+
+  const tax = number(
+    p.tax_amount ?? p.total_tax ??
+    items.reduce((sum,i) => sum + number(i.tax_amount),0)
+  );
+
+  const extra = number(p.extra_charges);
+  const total = number(
+    p.total_amount ?? (subtotal-discount+tax+extra)
+  );
+  const paid = number(p.paid_amount);
+  const due = number(p.due_amount ?? (total-paid));
+
+  const itemRows = items.map((i,index) => {
+    const lineTotal = i.total_amount != null
+      ? number(i.total_amount)
+      : number(i.quantity)*number(i.purchase_price)
+        - number(i.discount_amount)+number(i.tax_amount);
+
+    return `
+      <tr>
+        <td>${index+1}</td>
+        <td>${escapeHtml(i.product_name || i.product_id || "-")}</td>
+        <td>${escapeHtml(i.quantity)}</td>
+        <td>${money(i.purchase_price)}</td>
+        <td>${money(i.discount_amount)}</td>
+        <td>${money(i.tax_amount)}</td>
+        <td>${money(lineTotal)}</td>
+      </tr>
+    `;
+  }).join("");
+
+  const win = window.open("", "_blank", "width=950,height=750");
+
+  if (!win) {
+    showMessage("Browser pop-ups block kar raha hai. Pop-ups allow karein.", "err");
+    return;
+  }
+
+  win.document.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Purchase Receipt - ${escapeHtml(p.purchase_code || p.id)}</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;color:#111;margin:20px;font-size:12px}
+.receipt{max-width:850px;margin:auto}
+.top{text-align:center;border-bottom:2px solid #111;padding-bottom:12px;margin-bottom:16px}
+h1{font-size:23px;margin:0 0 7px}
+h2{font-size:15px;margin:18px 0 9px}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:9px 20px;margin-bottom:14px}
+.meta div{overflow-wrap:anywhere}
+table{width:100%;border-collapse:collapse;margin:10px 0 18px}
+th,td{border:1px solid #555;padding:7px;text-align:left}
+th{background:#eee}
+.num{text-align:right;white-space:nowrap}
+.totals{width:320px;max-width:100%;margin-left:auto}
+.totals div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #ddd;padding:7px}
+.grand{font-size:15px;font-weight:bold;border-top:2px solid #111}
+.notes{margin-top:18px;overflow-wrap:anywhere}
+.signatures{display:grid;grid-template-columns:1fr 1fr;gap:65px;margin-top:65px}
+.signature{text-align:center}
+.signature .line{border-top:1px solid #111;padding-top:8px}
+.signature p{margin:5px 0}
+.footer{text-align:center;border-top:1px solid #aaa;margin-top:30px;padding-top:12px}
+.print-actions{text-align:center;margin:22px}
+.print-actions button{padding:10px 20px;margin:5px;cursor:pointer}
+@page{size:auto;margin:12mm}
+@media print{
+ body{margin:0;font-size:11px}
+ .print-actions{display:none}
+ thead{display:table-header-group}
+ tr{break-inside:avoid}
+ .signatures{break-inside:avoid}
+}
+@media(max-width:600px){
+ .meta{grid-template-columns:1fr}
+ th,td{padding:4px;font-size:9px}
+ .signatures{gap:20px}
+}
+</style>
+</head>
+<body>
+<div class="receipt">
+
+  <div class="top">
+    <h1>SHOP MANAGEMENT SYSTEM</h1>
+    <div><b>PURCHASE RECEIPT</b></div>
+    <div style="margin-top:7px">Printed: ${escapeHtml(new Date().toLocaleString())}</div>
+  </div>
+
+  <h2>Purchase Information</h2>
+  <div class="meta">
+    <div><b>Purchase Code:</b> ${escapeHtml(p.purchase_code || "-")}</div>
+    <div><b>Purchase ID:</b> ${escapeHtml(p.id ?? "-")}</div>
+    <div><b>Supplier:</b> ${escapeHtml(p.supplier_name || p.supplier_id || "-")}</div>
+    <div><b>Purchase Date:</b> ${escapeHtml(p.purchase_date || "-")}</div>
+    <div><b>Supplier Invoice:</b> ${escapeHtml(p.supplier_invoice_no || "-")}</div>
+    <div><b>Payment Method:</b> ${escapeHtml(p.payment_method || "-")}</div>
+    <div><b>Payment Status:</b> ${escapeHtml(p.payment_status || "-")}</div>
+    <div><b>Purchase Status:</b> ${escapeHtml(p.status || "-")}</div>
+  </div>
+
+  <h2>Purchased Products</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>Product</th><th>Qty</th>
+        <th>Purchase Price</th><th>Discount</th><th>Tax</th><th>Line Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${itemRows || '<tr><td colspan="7">No item details available</td></tr>'}
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <div><span>Subtotal</span><b>${money(subtotal)}</b></div>
+    <div><span>Discount</span><b>${money(discount)}</b></div>
+    <div><span>Tax</span><b>${money(tax)}</b></div>
+    <div><span>Extra Charges</span><b>${money(extra)}</b></div>
+    <div class="grand"><span>Grand Total</span><b>${money(total)}</b></div>
+    <div><span>Paid Amount</span><b>${money(paid)}</b></div>
+    <div><span>Remaining Due</span><b>${money(due)}</b></div>
+  </div>
+
+  <div class="notes">
+    <b>Notes:</b> ${escapeHtml(p.notes || "-")}
+  </div>
+
+  <div class="signatures">
+    <div class="signature">
+      <div style="height:35px"></div>
+      <div class="line">Supplier Signature</div>
+      <p>Name: __________________</p>
+      <p>Date: __________________</p>
+    </div>
+    <div class="signature">
+      <div style="height:35px"></div>
+      <div class="line">Authorized Signature</div>
+      <p>Name: __________________</p>
+      <p>Date: __________________</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    This receipt confirms the purchase details shown above.
+    Please keep it for your records.
+  </div>
+</div>
+
+<div class="print-actions">
+  <button onclick="window.print()">Print Receipt</button>
+  <button onclick="window.close()">Close</button>
+</div>
+
+<script>
+window.onload = function(){
+  window.focus();
+};
+<\/script>
+</body>
+</html>`);
+
+  win.document.close();
+  win.focus();
+}
+
+async function editPurchase(id) {
+  try {
+    const result = await api("/purchases/" + id);
+    const p = result.data || result;
+
+    if (String(p.status).toLowerCase() === "cancelled") {
+      showMessage("Cancelled purchase edit nahi ho sakti.", "err");
+      return;
+    }
+
+    if (number(p.paid_amount) > 0) {
+      showMessage(
+        "Is purchase par payment ho chuki hai. Paid purchase edit karne se pehle API payment rules check karein.",
+        "err"
+      );
+      return;
+    }
+
+    editingPurchaseId = id;
+    $("formTitle").textContent = "Update Purchase #" + id;
+    $("saveButton").textContent = "Update Purchase";
+    $("purchaseCode").value = p.purchase_code || "";
+    $("supplier").value = String(p.supplier_id || "");
+    $("invoiceNo").value = p.supplier_invoice_no || "";
+    $("purchaseDate").value = String(p.purchase_date || today()).slice(0,10);
+    $("paymentMethod").value = p.payment_method || "cash";
+    $("extraCharges").value = p.extra_charges || 0;
+    $("paidAmount").value = p.paid_amount || 0;
+    $("notes").value = p.notes || "";
+    $("itemsBody").innerHTML = "";
+
+    for (const item of (p.items || [])) addItem(item);
+    if (!(p.items || []).length) addItem();
+
+    calculateTotals();
+    window.scrollTo({top:0,behavior:"smooth"});
+    showMessage("Purchase edit mode mein hai. Changes karke Update Purchase dabayein.");
+  } catch(error) {
+    showMessage("Purchase edit nahi hui:\n" + error.message, "err");
+  }
+}
+
+async function cancelPurchase(id) {
+  if (!confirm(
+    "Purchase #" + id + " cancel karni hai?\nStock reverse hoga. Yeh action wapas nahi hota."
+  )) return;
+
+  try {
+    const result = await api("/purchases/" + id + "/cancel", {
+      method:"PATCH"
+    });
+
+    showMessage(result.message || "Purchase cancelled.");
+    await loadPurchases(purchasesPage);
+    await loadProducts();
+  } catch(error) {
+    showMessage("Purchase cancel nahi hui:\n" + error.message, "err");
+  }
+}
+
+$("extraCharges").addEventListener("input", calculateTotals);
+$("paidAmount").addEventListener("input", calculateTotals);
+$("pageLimit").addEventListener("change", () => loadPurchases(1));
+
+$("searchInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") loadPurchases(1);
+});
+
+async function init() {
+  $("purchaseDate").value = today();
+  $("purchaseCode").value = newPurchaseCode();
+  await loadSuppliers();
+  await loadProducts();
+  addItem();
+  await loadPurchases(1);
+}
+
+init();
+</script>
+</body>
+</html>

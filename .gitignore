@@ -1,0 +1,25 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Database files and backups
+*.db
+*.sqlite
+*.sqlite3
+*.sql
+*.bak
+
+# Uploaded files
+uploads/
+
+# Logs and editors
+*.log
+.vscode/
+.idea/

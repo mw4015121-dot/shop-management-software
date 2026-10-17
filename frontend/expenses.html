@@ -1,0 +1,620 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop Management - Expenses</title>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:20px;font-family:Arial,sans-serif;background:#f1f5f9;color:#1e293b}
+.container{max-width:1250px;margin:auto}
+header,.records-heading{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px}
+h1{margin:0}
+h2{font-size:20px;margin:0 0 16px}
+p{color:#64748b}
+a,button{cursor:pointer;text-decoration:none;border:0;border-radius:6px;padding:10px 14px;font-size:14px}
+button:disabled{opacity:.5;cursor:not-allowed}
+.back,.secondary{background:#475569;color:white}
+.primary{background:#2563eb;color:white}
+.success{background:#16a34a;color:white}
+.danger{background:#dc2626;color:white}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-bottom:22px}
+.card,.panel{background:white;padding:20px;border-radius:10px;box-shadow:0 2px 8px #0000000a}
+.card h3{margin:0 0 12px;color:#64748b;font-size:15px}
+.card strong{font-size:26px}
+.panel{margin-bottom:22px}
+form,.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+label{display:block;font-size:14px;font-weight:bold;margin-bottom:6px}
+input,select,textarea{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px}
+textarea{min-height:42px;resize:vertical}
+.form-actions{display:flex;align-items:end;gap:8px;flex-wrap:wrap}
+.message{margin:12px 0;font-weight:bold;white-space:pre-wrap}
+.table-wrap{overflow-x:auto;margin-top:18px}
+table{border-collapse:collapse;width:100%;min-width:900px}
+th,td{text-align:left;padding:11px;border:1px solid #e2e8f0;font-size:13px;vertical-align:top}
+th{background:#f8fafc}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.small{padding:7px 9px}
+.pagination{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:18px}
+.records-heading h2{margin:0}
+@media(max-width:600px){body{padding:10px}.card,.panel{padding:14px}}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<header>
+    <div>
+        <h1>Expenses Management</h1>
+        <p>Manage shop expenses, payments and records.</p>
+    </div>
+    <a class="back" href="/frontend/dashboard.html">← Dashboard</a>
+</header>
+
+<section class="summary">
+    <div class="card">
+        <h3>Total Expense Records</h3>
+        <strong id="totalRecords">0</strong>
+    </div>
+    <div class="card">
+        <h3>Total Expenses</h3>
+        <strong id="totalExpenses">Rs. 0.00</strong>
+    </div>
+    <div class="card">
+        <h3>Today's Expenses</h3>
+        <strong id="todayExpenses">Rs. 0.00</strong>
+    </div>
+</section>
+
+<section class="panel">
+    <h2 id="formTitle">Add New Expense</h2>
+
+    <form id="expenseForm">
+        <div>
+            <label for="expense_title">Expense Title *</label>
+            <input id="expense_title" maxlength="150"
+                   placeholder="e.g. Electricity Bill" required>
+        </div>
+
+        <div>
+            <label for="category">Category *</label>
+            <select id="category" required>
+                <option value="">Select Category</option>
+                <option>Utilities</option>
+                <option>Rent</option>
+                <option>Salary</option>
+                <option>Transport</option>
+                <option>Maintenance</option>
+                <option>Office Supplies</option>
+                <option>Internet</option>
+                <option>Other</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="amount">Amount (Rs.) *</label>
+            <input id="amount" type="number" min="0.01"
+                   step="0.01" placeholder="3500" required>
+        </div>
+
+        <div>
+            <label for="expense_date">Expense Date *</label>
+            <input id="expense_date" type="date" required>
+        </div>
+
+        <div>
+            <label for="payment_method">Payment Method *</label>
+            <select id="payment_method" required>
+                <option>Cash</option>
+                <option>Bank Transfer</option>
+                <option>Card</option>
+                <option>JazzCash</option>
+                <option>EasyPaisa</option>
+                <option>Other</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="notes">Notes</label>
+            <textarea id="notes" placeholder="Optional details"></textarea>
+        </div>
+
+        <div class="form-actions">
+            <button class="primary" type="submit" id="saveBtn">
+                Save Expense
+            </button>
+            <button class="secondary" type="button"
+                    id="cancelEditBtn" hidden onclick="resetForm()">
+                Cancel Edit
+            </button>
+        </div>
+    </form>
+
+    <div class="message" id="formMessage"></div>
+</section>
+
+<section class="panel">
+    <div class="records-heading">
+        <h2>Expense Records</h2>
+        <button type="button" class="primary" onclick="printReport()">
+            🖨 Print Expense Report
+        </button>
+    </div>
+
+    <div class="filters">
+        <div>
+            <label for="search">Search</label>
+            <input id="search" placeholder="Search title or notes">
+        </div>
+
+        <div>
+            <label for="filterCategory">Category</label>
+            <select id="filterCategory">
+                <option value="">All Categories</option>
+                <option>Utilities</option>
+                <option>Rent</option>
+                <option>Salary</option>
+                <option>Transport</option>
+                <option>Maintenance</option>
+                <option>Office Supplies</option>
+                <option>Internet</option>
+                <option>Other</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="startDate">From Date</label>
+            <input id="startDate" type="date">
+        </div>
+
+        <div>
+            <label for="endDate">To Date</label>
+            <input id="endDate" type="date">
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="primary" onclick="loadExpenses(1)">Search</button>
+            <button type="button" class="secondary" onclick="clearFilters()">Clear</button>
+        </div>
+    </div>
+
+    <div class="message" id="listMessage"></div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th><th>Date</th><th>Title</th><th>Category</th>
+                    <th>Amount</th><th>Payment</th><th>Notes</th><th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="expenseTable">
+                <tr><td colspan="8">Loading expenses...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination">
+        <button class="secondary" id="prevBtn" onclick="changePage(-1)">Previous</button>
+        <span id="pageInfo">Page 1</span>
+        <button class="secondary" id="nextBtn" onclick="changePage(1)">Next</button>
+    </div>
+</section>
+
+</div>
+
+<script>
+const API = "/expenses/";
+let currentPage = 1;
+let totalPages = 1;
+let editingId = null;
+let expensesCache = [];
+
+const $ = id => document.getElementById(id);
+
+function money(value) {
+    return "Rs. " + Number(value || 0).toLocaleString("en-PK", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+function todayString() {
+    const now = new Date();
+    const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 10);
+}
+
+function printDateTime() {
+    return new Date().toLocaleString("en-PK", {
+        dateStyle: "medium",
+        timeStyle: "short"
+    });
+}
+
+$("expense_date").value = todayString();
+
+async function apiRequest(url, options = {}) {
+    const response = await fetch(url, {
+        ...options,
+        headers: {
+            "Content-Type": "application/json",
+            ...(options.headers || {})
+        }
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        const detail = data.detail;
+        const message = Array.isArray(detail)
+            ? detail.map(item => item.msg).join(", ")
+            : (detail || "Request failed");
+        throw new Error(message);
+    }
+
+    return data;
+}
+
+async function loadSummary() {
+    try {
+        const data = await apiRequest("/expenses/summary");
+        $("totalRecords").textContent = data.total_records ?? 0;
+        $("totalExpenses").textContent = money(data.total_expenses);
+        $("todayExpenses").textContent = money(data.today_expenses);
+    } catch (error) {
+        $("formMessage").textContent = "Summary error: " + error.message;
+    }
+}
+
+function filterParams(page, limit) {
+    const params = new URLSearchParams({
+        page: String(page),
+        limit: String(limit)
+    });
+
+    const search = $("search").value.trim();
+    const category = $("filterCategory").value;
+    const start = $("startDate").value;
+    const end = $("endDate").value;
+
+    if (search) params.set("search", search);
+    if (category) params.set("category", category);
+    if (start) params.set("start_date", start);
+    if (end) params.set("end_date", end);
+
+    return params;
+}
+
+async function loadExpenses(page = currentPage) {
+    currentPage = page;
+    $("listMessage").textContent = "Loading...";
+
+    try {
+        const params = filterParams(currentPage, 10);
+        const data = await apiRequest(API + "?" + params.toString());
+
+        expensesCache = data.expenses || [];
+        totalPages = Math.max(1, Number(data.total_pages || 1));
+
+        $("pageInfo").textContent =
+            `Page ${currentPage} of ${totalPages} | Records: ${data.total ?? 0}`;
+
+        $("prevBtn").disabled = currentPage <= 1;
+        $("nextBtn").disabled = currentPage >= totalPages;
+
+        renderExpenses(expensesCache);
+        $("listMessage").textContent = "";
+    } catch (error) {
+        $("expenseTable").innerHTML =
+            '<tr><td colspan="8">Could not load expenses.</td></tr>';
+        $("listMessage").textContent = "Error: " + error.message;
+    }
+}
+
+function renderExpenses(items) {
+    const tbody = $("expenseTable");
+
+    if (!items.length) {
+        tbody.innerHTML = '<tr><td colspan="8">No expenses found.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = items.map(item => `
+        <tr>
+            <td>${escapeHTML(item.id)}</td>
+            <td>${escapeHTML(item.expense_date)}</td>
+            <td>${escapeHTML(item.expense_title)}</td>
+            <td>${escapeHTML(item.category)}</td>
+            <td>${money(item.amount)}</td>
+            <td>${escapeHTML(item.payment_method)}</td>
+            <td>${escapeHTML(item.notes || "-")}</td>
+            <td>
+                <div class="actions">
+                    <button class="primary small"
+                        onclick="editExpense(${Number(item.id)})">Edit</button>
+                    <button class="success small"
+                        onclick="printReceipt(${Number(item.id)})">Print Receipt</button>
+                    <button class="danger small"
+                        onclick="deleteExpense(${Number(item.id)})">Delete</button>
+                </div>
+            </td>
+        </tr>
+    `).join("");
+}
+
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[char]);
+}
+
+$("expenseForm").addEventListener("submit", async event => {
+    event.preventDefault();
+
+    const payload = {
+        expense_title: $("expense_title").value.trim(),
+        category: $("category").value,
+        amount: Number($("amount").value),
+        expense_date: $("expense_date").value,
+        payment_method: $("payment_method").value,
+        notes: $("notes").value.trim() || null
+    };
+
+    $("saveBtn").disabled = true;
+    $("formMessage").textContent = "Saving...";
+
+    try {
+        if (editingId !== null) {
+            await apiRequest(API + editingId, {
+                method: "PUT",
+                body: JSON.stringify(payload)
+            });
+            $("formMessage").textContent = "Expense updated successfully.";
+        } else {
+            await apiRequest(API, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+            $("formMessage").textContent = "Expense added successfully.";
+        }
+
+        resetForm(false);
+        await loadSummary();
+        await loadExpenses(1);
+    } catch (error) {
+        $("formMessage").textContent = "Error: " + error.message;
+    } finally {
+        $("saveBtn").disabled = false;
+    }
+});
+
+function editExpense(id) {
+    const item = expensesCache.find(expense => Number(expense.id) === Number(id));
+
+    if (!item) {
+        alert("Expense not found. Please refresh the list.");
+        return;
+    }
+
+    editingId = Number(id);
+    $("expense_title").value = item.expense_title || "";
+    $("category").value = item.category || "";
+    $("amount").value = item.amount || "";
+    $("expense_date").value = String(item.expense_date || "").slice(0, 10);
+    $("payment_method").value = item.payment_method || "Cash";
+    $("notes").value = item.notes || "";
+
+    $("formTitle").textContent = "Edit Expense #" + id;
+    $("saveBtn").textContent = "Update Expense";
+    $("cancelEditBtn").hidden = false;
+    $("formMessage").textContent = "";
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function deleteExpense(id) {
+    if (!confirm("Are you sure you want to delete expense #" + id + "?")) return;
+
+    try {
+        await apiRequest(API + id, { method: "DELETE" });
+
+        if (expensesCache.length === 1 && currentPage > 1) currentPage--;
+
+        await loadSummary();
+        await loadExpenses(currentPage);
+        $("listMessage").textContent = "Expense deleted successfully.";
+    } catch (error) {
+        $("listMessage").textContent = "Delete error: " + error.message;
+    }
+}
+
+function resetForm(clearMessage = true) {
+    $("expenseForm").reset();
+    editingId = null;
+    $("formTitle").textContent = "Add New Expense";
+    $("saveBtn").textContent = "Save Expense";
+    $("cancelEditBtn").hidden = true;
+    $("expense_date").value = todayString();
+
+    if (clearMessage) $("formMessage").textContent = "";
+}
+
+function clearFilters() {
+    $("search").value = "";
+    $("filterCategory").value = "";
+    $("startDate").value = "";
+    $("endDate").value = "";
+    loadExpenses(1);
+}
+
+function changePage(direction) {
+    const next = currentPage + direction;
+    if (next >= 1 && next <= totalPages) loadExpenses(next);
+}
+
+/* PRINT RECEIPT AND REPORT */
+
+function printDocument(title, content) {
+    const printedAt = printDateTime();
+    const printWindow = window.open("", "_blank", "width=900,height=700");
+
+    if (!printWindow) {
+        alert("Print window blocked. Please allow pop-ups for this website.");
+        return;
+    }
+
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>${escapeHTML(title)}</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    color: #111;
+                    margin: 25px;
+                }
+                h1, h2 { text-align: center; margin: 7px 0; }
+                .subtitle { text-align: center; margin: 8px 0 22px; }
+                .printed-at { text-align: right; font-size: 12px; margin: 18px 0; }
+                table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+                th, td { border: 1px solid #777; padding: 9px; text-align: left; font-size: 12px; }
+                th { background: #eee; }
+                .total { text-align: right; font-size: 18px; font-weight: bold; margin-top: 20px; }
+                .signatures {
+                    display: flex;
+                    justify-content: space-between;
+                    gap: 24px;
+                    margin-top: 80px;
+                    page-break-inside: avoid;
+                }
+                .sign {
+                    width: 31%;
+                    text-align: center;
+                    border-top: 1px solid #111;
+                    padding-top: 8px;
+                    font-size: 12px;
+                }
+                .footer { text-align: center; margin-top: 28px; font-size: 11px; }
+                @media print { body { margin: 12mm; } }
+            </style>
+        </head>
+        <body>
+            <h1>Shop Management Software</h1>
+            <h2>${escapeHTML(title)}</h2>
+            <div class="printed-at">Printed Date &amp; Time: ${escapeHTML(printedAt)}</div>
+            ${content}
+            <div class="signatures">
+                <div class="sign">Prepared By / Signature</div>
+                <div class="sign">Authorized Person / Signature</div>
+                <div class="sign">Received By / Signature</div>
+            </div>
+            <div class="footer">Computer-generated expense record</div>
+            <script>
+                window.onload = function() {
+                    window.focus();
+                    window.print();
+                };
+            <\/script>
+        </body>
+        </html>
+    `);
+
+    printWindow.document.close();
+}
+
+function printReceipt(id) {
+    const item = expensesCache.find(expense => Number(expense.id) === Number(id));
+
+    if (!item) {
+        alert("Expense not found. Please refresh the list.");
+        return;
+    }
+
+    const content = `
+        <table>
+            <tr><th>Expense ID</th><td>${escapeHTML(item.id)}</td></tr>
+            <tr><th>Expense Date</th><td>${escapeHTML(item.expense_date)}</td></tr>
+            <tr><th>Expense Title</th><td>${escapeHTML(item.expense_title)}</td></tr>
+            <tr><th>Category</th><td>${escapeHTML(item.category)}</td></tr>
+            <tr><th>Payment Method</th><td>${escapeHTML(item.payment_method)}</td></tr>
+            <tr><th>Notes</th><td>${escapeHTML(item.notes || "-")}</td></tr>
+        </table>
+        <div class="total">Expense Amount: ${money(item.amount)}</div>
+    `;
+
+    printDocument("Expense Receipt #" + id, content);
+}
+
+async function printReport() {
+    try {
+        const firstParams = filterParams(1, 100);
+        const first = await apiRequest(API + "?" + firstParams.toString());
+        const allExpenses = [...(first.expenses || [])];
+        const pages = Number(first.total_pages || 1);
+
+        for (let page = 2; page <= pages; page++) {
+            const params = filterParams(page, 100);
+            const data = await apiRequest(API + "?" + params.toString());
+            allExpenses.push(...(data.expenses || []));
+        }
+
+        if (!allExpenses.length) {
+            alert("Print karne ke liye koi expense record nahi mila.");
+            return;
+        }
+
+        const rows = allExpenses.map(item => `
+            <tr>
+                <td>${escapeHTML(item.id)}</td>
+                <td>${escapeHTML(item.expense_date)}</td>
+                <td>${escapeHTML(item.expense_title)}</td>
+                <td>${escapeHTML(item.category)}</td>
+                <td>${money(item.amount)}</td>
+                <td>${escapeHTML(item.payment_method)}</td>
+            </tr>
+        `).join("");
+
+        const total = allExpenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+        const filterNotes = [];
+
+        if ($("search").value.trim()) filterNotes.push("Search: " + escapeHTML($("search").value.trim()));
+        if ($("filterCategory").value) filterNotes.push("Category: " + escapeHTML($("filterCategory").value));
+        if ($("startDate").value) filterNotes.push("From: " + escapeHTML($("startDate").value));
+        if ($("endDate").value) filterNotes.push("To: " + escapeHTML($("endDate").value));
+
+        const content = `
+            <p>Report Records: ${allExpenses.length}</p>
+            <p>${filterNotes.length ? "Filters: " + filterNotes.join(" | ") : "Report: All expenses"}</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th><th>Date</th><th>Title</th>
+                        <th>Category</th><th>Amount</th><th>Payment</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+            <div class="total">Total Expenses: ${money(total)}</div>
+        `;
+
+        printDocument("Expense Report", content);
+    } catch (error) {
+        alert("Report print error: " + error.message);
+    }
+}
+
+loadSummary();
+loadExpenses(1);
+</script>
+</body>
+</html>
