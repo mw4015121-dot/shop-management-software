@@ -1,5 +1,6 @@
 
 import os
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
@@ -20,21 +21,23 @@ from staff import router as staff_router
 from payments import router as payments_router
 
 
+# Project folders
+BASE_DIR = Path(__file__).resolve().parent
+UPLOADS_DIR = BASE_DIR / "uploads"
+FRONTEND_DIR = BASE_DIR / "frontend"
 
-# =========================
-# Create FastAPI Application
-# =========================
+# Create uploads folder if it does not exist
+UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
+
+# Create FastAPI application
 app = FastAPI(
     title="Shop Management Software",
     version="1.0.0"
 )
 
 
-# =========================
 # Session Security
-# =========================
-
 secret_key = os.environ.get("SHOP_SESSION_SECRET")
 
 if not secret_key:
@@ -46,14 +49,11 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=secret_key,
     same_site="lax",
-    https_only=False  # Local testing only
+    https_only=False
 )
 
 
-# =========================
 # API Routers
-# =========================
-
 app.include_router(products_router)
 app.include_router(customers_router)
 app.include_router(auth_router)
@@ -67,33 +67,23 @@ app.include_router(staff_router)
 app.include_router(payments_router)
 
 
-# =========================
 # Product Images
-# =========================
-
 app.mount(
     "/uploads",
-    StaticFiles(directory="uploads"),
+    StaticFiles(directory=str(UPLOADS_DIR)),
     name="uploads"
 )
 
 
-# =========================
 # Frontend Files
-# =========================
-
 app.mount(
     "/frontend",
-    StaticFiles(directory="frontend", html=True),
+    StaticFiles(directory=str(FRONTEND_DIR), html=True),
     name="frontend"
 )
 
 
-# =========================
 # Home Page
-# Redirect to Login
-# =========================
-
 @app.get("/")
 def home():
     return RedirectResponse(
@@ -102,10 +92,7 @@ def home():
     )
 
 
-# =========================
 # Database Connection Test
-# =========================
-
 @app.get("/test-db")
 def test_database():
     connection = get_connection()
@@ -119,10 +106,7 @@ def test_database():
         connection.close()
 
 
-# =========================
 # Application Health Check
-# =========================
-
 @app.get("/health")
 def health_check():
     return {
