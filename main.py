@@ -38,13 +38,19 @@ FRONTEND_DIR = BASE_DIR / "frontend"
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 
+import threading
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Initialize database tables and seed default admin user
-    try:
-        init_db()
-    except Exception as err:
-        print(f"Warning: Database initialization skipped or deferred: {err}")
+    # Run database initialization in background thread so the server binds to PORT immediately
+    def run_init():
+        try:
+            init_db()
+        except Exception as err:
+            print(f"Warning: Database initialization error: {err}")
+
+    threading.Thread(target=run_init, daemon=True).start()
     yield
 
 

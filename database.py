@@ -365,28 +365,33 @@ def init_db(max_retries: int = 5, retry_delay: int = 2):
                 print("[DB Init] Could not connect to database after maximum retries.")
                 return False
 
-    cursor = connection.cursor(dictionary=True)
+    if not connection:
+        return False
+
     try:
-        # Create all tables
-        for query in TABLE_DEFINITIONS:
-            cursor.execute(query)
-        connection.commit()
-
-        # Seed default admin if admin table is empty
-        cursor.execute("SELECT COUNT(*) AS total FROM admin")
-        row = cursor.fetchone()
-        if not row or row.get("total", 0) == 0:
-            cursor.execute(
-                "INSERT INTO admin (username, password_hash) VALUES (%s, %s)",
-                ("admin", "1234")
-            )
+        cursor = connection.cursor(dictionary=True)
+        try:
+            # Create all tables
+            for query in TABLE_DEFINITIONS:
+                cursor.execute(query)
             connection.commit()
-            print("[DB Init] Default admin created (username: 'admin', password: '1234')")
 
-        print("[DB Init] All database tables initialized successfully.")
-        return True
+            # Seed default admin if admin table is empty
+            cursor.execute("SELECT COUNT(*) AS total FROM admin")
+            row = cursor.fetchone()
+            if not row or row.get("total", 0) == 0:
+                cursor.execute(
+                    "INSERT INTO admin (username, password_hash) VALUES (%s, %s)",
+                    ("admin", "1234")
+                )
+                connection.commit()
+                print("[DB Init] Default admin created (username: 'admin', password: '1234')")
+
+            print("[DB Init] All database tables initialized successfully.")
+            return True
+        finally:
+            cursor.close()
     finally:
-        cursor.close()
         connection.close()
 
 
