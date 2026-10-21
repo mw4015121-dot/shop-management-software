@@ -1,13 +1,21 @@
-
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
-from database import get_connection
+from database import get_connection, init_db
 from products import router as products_router
 from customers import router as customers_router
 from auth import router as auth_router
@@ -30,20 +38,40 @@ FRONTEND_DIR = BASE_DIR / "frontend"
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize database tables and seed default admin user
+    try:
+        init_db()
+    except Exception as err:
+        print(f"Warning: Database initialization skipped or deferred: {err}")
+    yield
+
+
 # Create FastAPI application
 app = FastAPI(
     title="Shop Management Software",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+
+# CORS Configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
 # Session Security
-secret_key = os.environ.get("SHOP_SESSION_SECRET")
-
-if not secret_key:
-    raise RuntimeError(
-        "SHOP_SESSION_SECRET environment variable is not set."
-    )
+secret_key = (
+    os.environ.get("SHOP_SESSION_SECRET")
+    or os.environ.get("SECRET_KEY")
+    or "shop-session-secret-key-default-change-in-production-2026"
+)
 
 app.add_middleware(
     SessionMiddleware,
@@ -95,15 +123,22 @@ def home():
 # Database Connection Test
 @app.get("/test-db")
 def test_database():
-    connection = get_connection()
-
     try:
+        connection = get_connection()
+        cursor = connection.cursor()
+        cursor.execute("SELECT 1")
+        cursor.fetchone()
+        cursor.close()
+        connection.close()
         return {
             "success": True,
             "message": "MySQL Database Connected Successfully"
         }
-    finally:
-        connection.close()
+    except Exception as err:
+        return {
+            "success": False,
+            "message": f"Database connection error: {str(err)}"
+        }
 
 
 # Application Health Check
@@ -113,3 +148,9 @@ def health_check():
         "success": True,
         "message": "Shop Management Software is Running"
     }
+
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", "8000"))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
